@@ -156,7 +156,7 @@ fn profile_row(
     ));
     row.add_suffix(&update);
 
-    let delete = icon_button("tiltframe-trash-symbolic", "Delete profile");
+    let delete = icon_button("malus-trash-symbolic", "Delete profile");
     delete.connect_clicked(glib::clone!(
         #[weak]
         state,
