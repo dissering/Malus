@@ -46,6 +46,12 @@ pub fn settings_page(state: &AppState) -> gtk::Widget {
         "General",
         "preferences-system-symbolic",
     );
+    let fast_flags = stack.add_titled_with_icon(
+        &scrollable(&fast_flags::fast_flags_section(state)),
+        Some("fast-flags"),
+        "FastFlags",
+        "view-list-symbolic",
+    );
     let mods = stack.add_titled_with_icon(
         &scrollable(&mods_section(state)),
         Some("mods"),
@@ -80,12 +86,13 @@ pub fn settings_page(state: &AppState) -> gtk::Widget {
         .sync_create()
         .build();
 
+    show_only_while_roblox_is_selected(&fast_flags, state);
     show_only_while_roblox_is_selected(&mods, state);
     show_only_while_roblox_is_selected(&vr, state);
 
     let switcher = adw::ViewSwitcher::builder()
         .stack(&stack)
-        .policy(adw::ViewSwitcherPolicy::Wide)
+        .policy(adw::ViewSwitcherPolicy::Narrow)
         .halign(gtk::Align::Center)
         .margin_top(12)
         .margin_bottom(12)

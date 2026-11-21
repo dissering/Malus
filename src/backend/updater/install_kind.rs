@@ -45,7 +45,7 @@ mod tests {
             InstallKind::Other
         );
         assert_eq!(
-            InstallKind::from_environment(Some("/nowhere/Quadra.AppImage".into()), false),
+            InstallKind::from_environment(Some("/nowhere/Tiltframe.AppImage".into()), false),
             InstallKind::Other
         );
         assert_eq!(

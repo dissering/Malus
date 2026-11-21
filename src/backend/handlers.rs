@@ -5,8 +5,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-const PLACE_MIME_TYPES_FILE: &str = "org.quadrahq.Quadra.xml";
-const PLACE_MIME_TYPES: &str = include_str!("../../data/org.quadrahq.Quadra.xml");
+const PLACE_MIME_TYPES_FILE: &str = "io.github.dissering.Tiltframe.xml";
+const PLACE_MIME_TYPES: &str = include_str!("../../data/io.github.dissering.Tiltframe.xml");
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Handler {
@@ -20,9 +20,9 @@ impl Handler {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::RobloxLinks => "Open Roblox links with Quadra",
-            Self::StudioLinks => "Open Roblox Studio links with Quadra",
-            Self::StudioPlaces => "Open place files with Quadra",
+            Self::RobloxLinks => "Open Roblox links with Tiltframe",
+            Self::StudioLinks => "Open Roblox Studio links with Tiltframe",
+            Self::StudioPlaces => "Open place files with Tiltframe",
         }
     }
 
@@ -41,18 +41,18 @@ impl Handler {
     pub(super) fn entry(self) -> DesktopEntry {
         match self {
             Self::RobloxLinks => DesktopEntry {
-                file_name: "org.quadrahq.Quadra.RobloxLinks.desktop",
+                file_name: "io.github.dissering.Tiltframe.RobloxLinks.desktop",
                 name: "Roblox",
-                description: "Opens Roblox links with Quadra",
+                description: "Opens Roblox links with Tiltframe",
                 command_line_option: Some("--roblox"),
                 opens: Opens::Link,
                 mime_types: &["x-scheme-handler/roblox", "x-scheme-handler/roblox-player"],
                 shown_in_app_menu: false,
             },
             Self::StudioLinks => DesktopEntry {
-                file_name: "org.quadrahq.Quadra.StudioLinks.desktop",
+                file_name: "io.github.dissering.Tiltframe.StudioLinks.desktop",
                 name: "Roblox Studio",
-                description: "Opens Roblox Studio links with Quadra",
+                description: "Opens Roblox Studio links with Tiltframe",
                 command_line_option: Some("--studio"),
                 opens: Opens::Link,
                 mime_types: &[
@@ -62,9 +62,9 @@ impl Handler {
                 shown_in_app_menu: false,
             },
             Self::StudioPlaces => DesktopEntry {
-                file_name: "org.quadrahq.Quadra.StudioPlaces.desktop",
+                file_name: "io.github.dissering.Tiltframe.StudioPlaces.desktop",
                 name: "Roblox Studio",
-                description: "Opens Roblox places in Roblox Studio with Quadra",
+                description: "Opens Roblox places in Roblox Studio with Tiltframe",
                 command_line_option: Some("--studio"),
                 opens: Opens::File,
                 mime_types: &["application/x-roblox-rbxl", "application/x-roblox-rbxlx"],

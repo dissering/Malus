@@ -12,12 +12,12 @@ pub fn add_options(app: &adw::Application) {
     add_flag(
         app,
         ROBLOX_OPTION,
-        "Start Roblox without opening Quadra, following a roblox:// link if given",
+        "Start Roblox without opening Tiltframe, following a roblox:// link if given",
     );
     add_flag(
         app,
         STUDIO_OPTION,
-        "Start Roblox Studio without opening Quadra, following a link or opening a place file if given",
+        "Start Roblox Studio without opening Tiltframe, following a link or opening a place file if given",
     );
     add_flag(
         app,

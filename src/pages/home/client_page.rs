@@ -7,7 +7,7 @@ use crate::state::{AppState, Client};
 use adw::prelude::*;
 
 pub fn client_page(state: &AppState, client: Client) -> gtk::Widget {
-    let logo = app_icon(128);
+    let logo = app_icon(96);
 
     let title = gtk::Label::builder()
         .label(client.home_title())
@@ -16,9 +16,11 @@ pub fn client_page(state: &AppState, client: Client) -> gtk::Widget {
 
     let subtitle = status_label(state, client);
 
-    let logs_button = logs_button(state);
-
-    let play_button = play_button(state, client);
+    let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    actions.set_halign(gtk::Align::Center);
+    actions.set_margin_top(8);
+    actions.append(&play_button(state, client));
+    actions.append(&logs_button(state));
 
     let content = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
@@ -33,8 +35,7 @@ pub fn client_page(state: &AppState, client: Client) -> gtk::Widget {
     if client == Client::Player {
         content.append(&playtime_label(state));
     }
-    content.append(&logs_button);
-    content.append(&play_button);
+    content.append(&actions);
 
     content.upcast()
 }

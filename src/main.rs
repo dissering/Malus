@@ -13,13 +13,14 @@ use state::{AppState, Theme};
 use std::cell::OnceCell;
 use std::rc::Rc;
 
-const APP_ID: &str = "org.quadrahq.Quadra";
+const APP_ID: &str = "io.github.dissering.Tiltframe";
 
 fn main() -> glib::ExitCode {
     if let Some(exit_code) = command_line::run_report_if_requested() {
         return exit_code;
     }
 
+    glib::set_application_name("Tiltframe");
     let app = Application::builder()
         .application_id(APP_ID)
         .flags(gio::ApplicationFlags::HANDLES_COMMAND_LINE)
@@ -70,6 +71,8 @@ fn follow_theme(state: &AppState) {
     utils::register_bundled_fonts();
 
     let display = gtk::gdk::Display::default().unwrap();
+    gtk::IconTheme::for_display(&display).add_search_path(glib::user_data_dir().join("icons"));
+    gtk::Window::set_default_icon_name(APP_ID);
     let theme = gtk::CssProvider::new();
     gtk::style_context_add_provider_for_display(
         &display,

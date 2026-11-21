@@ -254,7 +254,7 @@ mod tests {
             }),
             small_image: Some(Image {
                 url: "quadra".to_owned(),
-                text: "Quadra".to_owned(),
+                text: "Tiltframe".to_owned(),
             }),
             link: None,
         }

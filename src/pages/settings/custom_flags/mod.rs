@@ -3,74 +3,61 @@ mod transfer;
 
 use crate::state::AppState;
 use adw::prelude::*;
-use flag_rows::{FlagRows, add_flag, show_custom_flags};
-use glib::clone;
+use flag_rows::{FlagRows, filter_rows, show_custom_flags, show_editor};
 use gtk::glib;
 
-pub fn custom_flags_group(state: &AppState) -> adw::PreferencesGroup {
-    let add_button = header_button("Add a flag", Some("list-add-symbolic"), None);
-    let import_button = header_button("Import flags from JSON", None, Some("Import"));
-    let export_button = header_button("Export flags as JSON", None, Some("Export"));
-
+pub fn custom_flags_group(state: &AppState, search: &gtk::SearchEntry) -> adw::PreferencesGroup {
     let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-    buttons.append(&add_button);
-    buttons.append(&import_button);
-    buttons.append(&export_button);
+    let add = gtk::Button::with_label("Add");
+    let import = gtk::Button::with_label("Import");
+    let export = gtk::Button::with_label("Export");
+    for button in [&add, &import, &export] {
+        button.set_valign(gtk::Align::Center);
+        button.add_css_class("flat");
+        buttons.append(button);
+    }
 
     let group = adw::PreferencesGroup::builder()
-        .title("Custom flags")
-        .description(
-            "Any other FastFlag, written as NAME=value. Roblox only honours allowlisted flags.",
-        )
+        .title("Custom overrides")
         .header_suffix(&buttons)
         .build();
-
     let rows = FlagRows::default();
-    show_custom_flags(&group, &rows, state);
 
-    add_button.connect_clicked(clone!(
+    state.follow_properties(
+        &["fast-flags"],
+        glib::clone!(
+            #[weak]
+            group,
+            #[weak]
+            search,
+            #[weak]
+            rows,
+            move |state| {
+                show_custom_flags(&group, &rows, state);
+                filter_rows(&group, &rows, &search.text());
+            }
+        ),
+    );
+    search.connect_search_changed(glib::clone!(
         #[weak]
         group,
-        #[strong]
-        rows,
+        move |search| filter_rows(&group, &rows, &search.text())
+    ));
+
+    add.connect_clicked(glib::clone!(
         #[strong]
         state,
-        move |_| add_flag(&group, &rows, &state)
+        move |button| show_editor(button, &state, None)
     ));
-    import_button.connect_clicked(clone!(
-        #[weak]
-        group,
-        #[strong]
-        rows,
+    import.connect_clicked(glib::clone!(
         #[strong]
         state,
-        move |button| {
-            let (group, rows) = (group.clone(), rows.clone());
-            transfer::show_import(button, &state, move |state| {
-                show_custom_flags(&group, &rows, state)
-            });
-        }
+        move |button| transfer::show_import(button, &state)
     ));
-    export_button.connect_clicked(clone!(
+    export.connect_clicked(glib::clone!(
         #[strong]
         state,
         move |button| transfer::show_export(button, &state)
     ));
-
     group
-}
-
-fn header_button(tooltip: &str, icon: Option<&str>, label: Option<&str>) -> gtk::Button {
-    let button = gtk::Button::builder()
-        .tooltip_text(tooltip)
-        .css_classes(["flat"])
-        .valign(gtk::Align::Center)
-        .build();
-    if let Some(icon) = icon {
-        button.set_icon_name(icon);
-    }
-    if let Some(label) = label {
-        button.set_label(label);
-    }
-    button
 }

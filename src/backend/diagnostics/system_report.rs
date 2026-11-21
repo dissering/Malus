@@ -21,10 +21,10 @@ const VENDORS: [(&str, &str); 3] = [("0x10de", "NVIDIA"), ("0x1002", "AMD"), ("0
 
 pub fn quadra_section(state: &AppState) -> String {
     let mut report = String::new();
-    let _ = writeln!(report, "Quadra {}", env!("CARGO_PKG_VERSION"));
+    let _ = writeln!(report, "Tiltframe {}", env!("CARGO_PKG_VERSION"));
     let _ = writeln!(
         report,
-        "Quadra's Rosemary: {}",
+        "Tiltframe's Rosemary: {}",
         backend::installed_quadra_rosemary_version().unwrap_or_else(|| "not installed".to_owned())
     );
     let _ = writeln!(report, "Runner: {}", state.runner());

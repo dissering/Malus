@@ -27,15 +27,15 @@ export PATH="$tools:$PATH"
 export DEPLOY_GTK_VERSION=4
 
 icon_files=()
-for icon in ../data/icons/hicolor/*/apps/org.quadrahq.Quadra.png; do
+for icon in ../data/icons/hicolor/*/apps/io.github.dissering.Tiltframe.png; do
     icon_files+=(--icon-file "$icon")
 done
 
 rm -rf "$appdir"
 linuxdeploy-x86_64.AppImage \
     --appdir "$appdir" \
-    --executable ../target/release/quadra \
-    --desktop-file ../data/org.quadrahq.Quadra.desktop \
+    --executable ../target/release/tiltframe \
+    --desktop-file ../data/io.github.dissering.Tiltframe.desktop \
     "${icon_files[@]}" \
     --plugin gtk
 

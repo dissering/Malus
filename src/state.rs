@@ -34,8 +34,11 @@ use serde::{Deserialize, Serialize};
 pub const USE_MONITOR_REFRESH_RATE: u32 = 0;
 pub const DEFAULT_VR_RENDER_SCALE: u32 = 70;
 pub const VR_RENDER_SCALE_RANGE: RangeInclusive<u32> = 40..=150;
-pub const QUADRA_RUNNER: &str = "Quadra";
-pub const QUADRA_PREFIX: &str = "Quadra";
+pub const LOG_TAIL_LIMIT: usize = 1024 * 1024;
+pub const LOG_TAIL_TARGET: usize = 768 * 1024;
+
+pub const QUADRA_RUNNER: &str = "Tiltframe";
+pub const QUADRA_PREFIX: &str = "Tiltframe";
 pub const ROSEMARY_DEFAULT_PREFIX: &str = "Rosemary default";
 
 const SAVE_DELAY_AFTER_LAST_CHANGE: Duration = Duration::from_millis(500);
@@ -359,10 +362,6 @@ mod imp {
         #[property(get, set)]
         advanced_settings_visible: Cell<bool>,
         #[property(get, set)]
-        available_update: RefCell<String>,
-        #[property(get, set)]
-        update_status: RefCell<String>,
-        #[property(get, set)]
         vr_status: RefCell<String>,
         #[property(get, set)]
         first_launch: Cell<bool>,
@@ -553,7 +552,7 @@ impl AppState {
     }
 
     pub fn append_log(&self, text: &str) {
-        self.imp().log.borrow_mut().push_str(text);
+        append_log_tail(&mut self.imp().log.borrow_mut(), text);
         self.emit_by_name::<()>(LOG_APPENDED, &[&text]);
     }
 
@@ -716,7 +715,9 @@ impl AppState {
 }
 
 pub fn settings_path() -> PathBuf {
-    glib::user_config_dir().join("quadra").join("config.toml")
+    glib::user_config_dir()
+        .join("tiltframe")
+        .join("config.toml")
 }
 
 enum SettingsProblem {
@@ -765,11 +766,11 @@ impl SettingsProblem {
     fn explanation(&self, kept_copy: Option<&Path>) -> String {
         let what_happened = match self {
             Self::Unparsable => {
-                "Quadra couldn't read your settings file, so every setting is back to its default."
+                "Tiltframe couldn't read your settings file, so every setting is back to its default."
                     .to_owned()
             }
             Self::InvalidValues(names) => format!(
-                "Some of your settings had values Quadra doesn't understand, so they're back to their defaults: {}.",
+                "Some of your settings had values Tiltframe doesn't understand, so they're back to their defaults: {}.",
                 names.join(", ")
             ),
         };
@@ -815,7 +816,7 @@ fn read_saved_settings() -> LoadedSettings {
                 settings: SavedSettings::default(),
                 file_existed: true,
                 problem: Some(format!(
-                    "Quadra couldn't open your settings file at {} ({error}), so it's using the default settings for now.",
+                    "Tiltframe couldn't open your settings file at {} ({error}), so it's using the default settings for now.",
                     path.display()
                 )),
                 save_repaired_settings: false,
@@ -849,8 +850,33 @@ fn write_saved_settings(settings: &SavedSettings) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
+fn append_log_tail(log: &mut String, text: &str) {
+    if text.len() >= LOG_TAIL_LIMIT {
+        log.clear();
+        log.push_str(&text[text.ceil_char_boundary(text.len() - LOG_TAIL_TARGET)..]);
+        return;
+    }
+    log.push_str(text);
+    if log.len() > LOG_TAIL_LIMIT {
+        let start = log.ceil_char_boundary(log.len() - LOG_TAIL_TARGET);
+        log.drain(..start);
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn log_tail_keeps_recent_utf8_when_a_batch_or_history_reaches_the_limit() {
+        use super::{LOG_TAIL_LIMIT, LOG_TAIL_TARGET, append_log_tail};
+        let mut log = String::new();
+        let output = "🚀".repeat(LOG_TAIL_LIMIT / 4);
+        append_log_tail(&mut log, &output);
+        assert_eq!(log.len(), LOG_TAIL_TARGET);
+        append_log_tail(&mut log, &"x".repeat(LOG_TAIL_LIMIT - LOG_TAIL_TARGET + 1));
+        assert!(log.len() <= LOG_TAIL_TARGET);
+        assert!(log.ends_with('x'));
+    }
+
     use super::*;
 
     #[test]

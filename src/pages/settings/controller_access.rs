@@ -9,7 +9,7 @@ pub fn controller_access_row() -> Option<adw::SwitchRow> {
 
     let row = adw::SwitchRow::builder()
         .title("Enable controller support")
-        .subtitle("Quadra runs as a Flatpak, so it needs your permission to see controllers.")
+        .subtitle("Tiltframe runs as a Flatpak, so it needs your permission to see controllers.")
         .active(backend::controller_access_is_granted())
         .build();
 
@@ -25,13 +25,13 @@ pub fn controller_access_row() -> Option<adw::SwitchRow> {
 fn show_controller_access_dialog(row: &adw::SwitchRow, allow_controllers: bool, command: &str) {
     let (heading, body) = if allow_controllers {
         (
-            "Let Quadra see controllers",
-            "Run this in a terminal to let Quadra and Roblox use your controllers, then restart Quadra:",
+            "Let Tiltframe see controllers",
+            "Run this in a terminal to let Tiltframe and Roblox use your controllers, then restart Tiltframe:",
         )
     } else {
         (
-            "Stop Quadra from seeing controllers",
-            "Run this in a terminal to take away Quadra's access to your devices, then restart Quadra:",
+            "Stop Tiltframe from seeing controllers",
+            "Run this in a terminal to take away Tiltframe's access to your devices, then restart Tiltframe:",
         )
     };
 

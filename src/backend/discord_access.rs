@@ -165,7 +165,7 @@ Num       RefCount Protocol Flags    Type St Inode Path
         missing_from(
             table,
             Path::new(RUNTIME_DIRECTORY),
-            "org.quadrahq.Quadra",
+            "io.github.dissering.Tiltframe",
             |path| visible.iter().any(|visible| path == Path::new(visible)),
         )
     }
@@ -178,7 +178,7 @@ Num       RefCount Protocol Flags    Type St Inode Path
                 discords: vec!["Discord (Flatpak)"],
                 command: "flatpak override --user \
                           --filesystem=xdg-run/app/com.discordapp.Discord:create \
-                          org.quadrahq.Quadra"
+                          io.github.dissering.Tiltframe"
                     .to_owned(),
             })
         );
@@ -189,7 +189,7 @@ Num       RefCount Protocol Flags    Type St Inode Path
         let table = "00: 00000002 00000000 00010000 0001 01 1 /run/user/1000/discord-ipc-1\n";
         assert_eq!(
             missing_with(table, &[]).unwrap().command,
-            "flatpak override --user --filesystem=xdg-run/discord-ipc-1 org.quadrahq.Quadra"
+            "flatpak override --user --filesystem=xdg-run/discord-ipc-1 io.github.dissering.Tiltframe"
         );
     }
 
@@ -224,7 +224,7 @@ Num       RefCount Protocol Flags    Type St Inode Path
              --filesystem=xdg-run/.flatpak/dev.vencord.Vesktop/xdg-run:create \
              --filesystem=xdg-run/snap.discord:create \
              --filesystem=xdg-run/snap.discord-canary:create \
-             org.quadrahq.Quadra"
+             io.github.dissering.Tiltframe"
         );
     }
 

@@ -26,7 +26,7 @@ pub fn clear(state: &AppState, when_finished: impl FnOnce(u64) + 'static) {
         return;
     }
     let Some(prefix_directory) = prefix::directory_for(&state.prefix()) else {
-        state.report_error("Quadra can only clear the cache of its own prefix.");
+        state.report_error("Tiltframe can only clear the cache of its own prefix.");
         return;
     };
 

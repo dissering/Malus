@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Quadra
+Name=Tiltframe
 Comment=Run Roblox on Linux
-Exec=quadra
-Icon=org.quadrahq.Quadra
+Exec=tiltframe
+Icon=io.github.dissering.Tiltframe
 Keywords=roblox;game;gaming;social;experience;launcher;
 Categories=GNOME;GTK;Game;
 Terminal=false

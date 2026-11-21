@@ -1,19 +1,16 @@
 use adw::prelude::*;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const WEBSITE: &str = "https://quadrahq.org";
-const DISCORD: &str = "https://discord.gg/W8jXfngc8z";
+const UPSTREAM: &str = "https://github.com/QuadraHQ/Quadra";
 
 pub fn show_about(parent: &impl IsA<gtk::Widget>) {
     let dialog = adw::AboutDialog::builder()
-        .application_name("Quadra")
+        .application_name("Tiltframe")
         .application_icon(crate::APP_ID)
-        .developer_name("QuadraHQ")
         .version(VERSION)
-        .website(WEBSITE)
         .license_type(gtk::License::Gpl30Only)
-        .comments("A bootstrapper for the macOS Roblox Player and Studio, running on Linux through Rosemary.")
+        .comments("A fork of Quadra for running the macOS Roblox Player and Studio on Linux with Rosemary.")
         .build();
-    dialog.add_link("Discord", DISCORD);
+    dialog.add_link("Upstream Quadra", UPSTREAM);
     dialog.present(Some(parent));
 }

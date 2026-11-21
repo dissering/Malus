@@ -1320,8 +1320,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "quadra"
-version = "0.50.4"
+name = "tiltframe"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-channel",

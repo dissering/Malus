@@ -7,7 +7,6 @@ use crate::components::launch_window::launch_window;
 use crate::components::line_field_backdrop::line_field_backdrop;
 use crate::components::play_action::PlayAction;
 use crate::components::tray::{TrayIcon, TrayRequest};
-use crate::components::update_banner::update_banner;
 use crate::pages::home::home_page;
 use crate::pages::servers::servers_page;
 use crate::pages::settings::settings_page;
@@ -269,7 +268,6 @@ fn pages(state: &AppState) -> ViewStack {
 fn window(app: &Application, state: &AppState, pages: &ViewStack) -> ApplicationWindow {
     let toolbar_view = ToolbarView::new();
     toolbar_view.add_top_bar(&bar(pages));
-    toolbar_view.add_top_bar(&update_banner(state));
     toolbar_view.set_content(Some(pages));
 
     let backdrop = gtk::Overlay::builder().child(&grid_backdrop(state)).build();
@@ -279,7 +277,7 @@ fn window(app: &Application, state: &AppState, pages: &ViewStack) -> Application
 
     let window = ApplicationWindow::builder()
         .application(app)
-        .title("Quadra")
+        .title("Tiltframe")
         .default_width(800)
         .default_height(600)
         .hide_on_close(true)

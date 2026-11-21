@@ -2,13 +2,11 @@ use super::custom_flags::custom_flags_group;
 use super::fast_flag_allowlist::{
     ALLOWLIST, ALLOWLIST_SOURCE, AllowlistedFlag, FlagCategory, FlagKind,
 };
-use crate::state::{AppState, Choice, FastFlagValue};
+use crate::state::{AppState, Choice, FastFlagValue, FastFlags};
 use adw::prelude::*;
 use gtk::glib;
 
 const INVALID_NUMBER_STYLE: &str = "error";
-const CUSTOM_PRESET_LABEL: &str = "Custom";
-const CUSTOM_PRESET_DESCRIPTION: &str = "Your own mix of flags, set below.";
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ToggleSetting {
@@ -47,265 +45,200 @@ impl ToggleSetting {
     }
 }
 
-struct PerformancePreset {
-    name: &'static str,
-    description: &'static str,
-    flags: &'static [(&'static str, FastFlagValue)],
-}
-
-const PERFORMANCE_PRESETS: &[PerformancePreset] = &[
-    PerformancePreset {
-        name: "Maximum Performance",
-        description: "All performance flags enabled. Lowest visual quality, highest FPS.",
-        flags: &[
-            ("FFlagDebugDisablePostFx", FastFlagValue::Toggle(true)),
-            (
-                "FFlagDebugDisableClusterCulling",
-                FastFlagValue::Toggle(true),
-            ),
-            (
-                "FFlagDebugGraphicsDisableComputeShaders",
-                FastFlagValue::Toggle(true),
-            ),
-            (
-                "FFlagTaskSchedulerLimitFrequency",
-                FastFlagValue::Toggle(false),
-            ),
-            ("DFIntTaskSchedulerTargetFps", FastFlagValue::Number(999)),
-            ("FIntRenderMaxDrawCallsPerFrame", FastFlagValue::Number(500)),
-            ("FFlagRenderFontResolution", FastFlagValue::Number(1)),
-            (
-                "FFlagDebugGraphicsPreferOpenGL",
-                FastFlagValue::Toggle(true),
-            ),
-            (
-                "FFlagDebugGraphicsPreferVulkan",
-                FastFlagValue::Toggle(true),
-            ),
-            ("DFIntGCJobFrequencyMs", FastFlagValue::Number(250)),
-            ("DFIntPhysicsStepsPerFrame", FastFlagValue::Number(1)),
-            (
-                "FFlagLuaAppEnableLowMemoryMode",
-                FastFlagValue::Toggle(true),
-            ),
-            ("FFlagDisableShadows", FastFlagValue::Toggle(true)),
-            ("FFlagDisableBloom", FastFlagValue::Toggle(true)),
-            ("FFlagDisableDepthOfField", FastFlagValue::Toggle(true)),
-            ("FFlagDisableGlobalShadows", FastFlagValue::Toggle(true)),
-            ("DFIntConnectionMTUSize", FastFlagValue::Number(1400)),
-            ("FFlagEnableReducedLatency", FastFlagValue::Toggle(true)),
-        ],
-    },
-    PerformancePreset {
-        name: "Balanced",
-        description: "Moderate performance gains with acceptable visuals.",
-        flags: &[
-            ("FFlagDebugDisablePostFx", FastFlagValue::Toggle(true)),
-            (
-                "FFlagTaskSchedulerLimitFrequency",
-                FastFlagValue::Toggle(false),
-            ),
-            ("DFIntTaskSchedulerTargetFps", FastFlagValue::Number(144)),
-            ("DFIntGCJobFrequencyMs", FastFlagValue::Number(250)),
-            ("DFIntPhysicsStepsPerFrame", FastFlagValue::Number(1)),
-            ("FFlagEnableReducedLatency", FastFlagValue::Toggle(true)),
-        ],
-    },
-    PerformancePreset {
-        name: "Low Latency / Anti-Stutter",
-        description: "Optimized for reducing lag spikes and input latency. Keeps visuals decent.",
-        flags: &[
-            ("FFlagDebugDisablePostFx", FastFlagValue::Toggle(true)),
-            (
-                "FFlagTaskSchedulerLimitFrequency",
-                FastFlagValue::Toggle(false),
-            ),
-            ("DFIntTaskSchedulerTargetFps", FastFlagValue::Number(144)),
-            ("DFIntGCJobFrequencyMs", FastFlagValue::Number(250)),
-            ("DFIntPhysicsStepsPerFrame", FastFlagValue::Number(1)),
-            ("FFlagEnableReducedLatency", FastFlagValue::Toggle(true)),
-            ("DFIntConnectionMTUSize", FastFlagValue::Number(1400)),
-        ],
-    },
-    PerformancePreset {
-        name: "Reset to Defaults",
-        description: "Clears all performance flags, uses Roblox defaults.",
-        flags: &[
-            ("FFlagDebugDisablePostFx", FastFlagValue::Toggle(false)),
-            (
-                "FFlagDebugDisableClusterCulling",
-                FastFlagValue::Toggle(false),
-            ),
-            (
-                "FFlagDebugGraphicsDisableComputeShaders",
-                FastFlagValue::Toggle(false),
-            ),
-            (
-                "FFlagTaskSchedulerLimitFrequency",
-                FastFlagValue::Toggle(true),
-            ),
-            ("DFIntTaskSchedulerTargetFps", FastFlagValue::Number(60)),
-            ("FIntRenderMaxDrawCallsPerFrame", FastFlagValue::Number(0)),
-            ("FFlagRenderFontResolution", FastFlagValue::Number(0)),
-            (
-                "FFlagDebugGraphicsPreferOpenGL",
-                FastFlagValue::Toggle(false),
-            ),
-            (
-                "FFlagDebugGraphicsPreferVulkan",
-                FastFlagValue::Toggle(false),
-            ),
-            ("DFIntGCJobFrequencyMs", FastFlagValue::Number(0)),
-            ("DFIntPhysicsStepsPerFrame", FastFlagValue::Number(0)),
-            (
-                "FFlagLuaAppEnableLowMemoryMode",
-                FastFlagValue::Toggle(false),
-            ),
-            ("FFlagDisableShadows", FastFlagValue::Toggle(false)),
-            ("FFlagDisableBloom", FastFlagValue::Toggle(false)),
-            ("FFlagDisableDepthOfField", FastFlagValue::Toggle(false)),
-            ("FFlagDisableGlobalShadows", FastFlagValue::Toggle(false)),
-            ("DFIntConnectionMTUSize", FastFlagValue::Number(0)),
-            ("FFlagEnableReducedLatency", FastFlagValue::Toggle(false)),
-        ],
-    },
-];
+const TEXTURE_ENABLED: &str = "DFFlagTextureQualityOverrideEnabled";
+const TEXTURE_QUALITY: &str = "DFIntTextureQualityOverride";
 
 pub fn fast_flags_section(state: &AppState) -> gtk::Box {
-    let allowlist_link = gtk::LinkButton::builder()
-        .uri(ALLOWLIST_SOURCE)
-        .label("View the allowlist")
-        .valign(gtk::Align::Center)
+    let search = gtk::SearchEntry::builder()
+        .placeholder_text("Search by name or value")
+        .hexpand(true)
         .build();
+    let active_only = gtk::ToggleButton::with_label("Overrides only");
+    let filters = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    filters.append(&search);
+    filters.append(&active_only);
 
-    let about_group = adw::PreferencesGroup::builder()
-        .title("FastFlags")
-        .description(
-            "Roblox only applies flags on its allowlist. Quadra writes the flags you set to ClientAppSettings.json each time Roblox starts.",
-        )
-        .header_suffix(&allowlist_link)
-        .build();
-
-    let presets_group = adw::PreferencesGroup::builder()
-        .title("Performance Presets")
-        .description("Quick-apply flag combinations for FPS gains. These are client-side only and not bannable.")
-        .build();
-    presets_group.add(&presets_row(state));
-
-    let section = gtk::Box::new(gtk::Orientation::Vertical, 12);
-    section.append(&about_group);
-    section.append(&presets_group);
-    for category in ALLOWLIST {
-        section.append(&category_group(state, category));
-    }
-    section.append(&custom_flags_group(state));
-
-    section
-}
-
-fn presets_row(state: &AppState) -> adw::ComboRow {
-    let labels: Vec<&str> = std::iter::once(CUSTOM_PRESET_LABEL)
-        .chain(PERFORMANCE_PRESETS.iter().map(|preset| preset.name))
-        .collect();
-
-    let row = adw::ComboRow::builder()
-        .title("Preset")
-        .model(&gtk::StringList::new(&labels))
-        .build();
-    show_applied_preset(&row, state);
-    show_preset_description(&row);
-
-    row.connect_selected_notify(glib::clone!(
+    let reset = gtk::Button::with_label("Reset all…");
+    reset.set_valign(gtk::Align::Center);
+    reset.connect_clicked(glib::clone!(
         #[strong]
         state,
-        move |row| {
-            show_preset_description(row);
-            if let Some(preset) = preset_at(row.selected()) {
-                apply_preset(&state, preset);
-            }
-        }
+        move |button| confirm_reset(button, &state)
     ));
-    state.connect_notify_local(
-        Some("fast-flags"),
+
+    let summary = adw::PreferencesGroup::builder()
+        .title("FastFlags")
+        .header_suffix(&reset)
+        .build();
+    state.follow_properties(
+        &["fast-flags"],
         glib::clone!(
             #[weak]
-            row,
-            move |state, _| show_applied_preset(&row, state)
+            summary,
+            #[weak]
+            reset,
+            move |state| {
+                let count = state.fast_flags().0.len();
+                let noun = if count == 1 { "override" } else { "overrides" };
+                summary.set_description(Some(&format!(
+                    "{count} {noun} · Applied when Roblox Player starts"
+                )));
+                reset.set_sensitive(count != 0);
+            }
         ),
     );
 
-    row
-}
+    let section = gtk::Box::new(gtk::Orientation::Vertical, 16);
+    section.set_margin_start(12);
+    section.set_margin_end(12);
+    section.set_margin_bottom(24);
+    section.append(&summary);
+    section.append(&filters);
+    let quick_settings = texture_preset_group(state);
+    section.append(&quick_settings);
+    section.append(&custom_flags_group(state, &search));
 
-fn preset_at(position: u32) -> Option<&'static PerformancePreset> {
-    let index = usize::try_from(position).ok()?.checked_sub(1)?;
-    PERFORMANCE_PRESETS.get(index)
-}
+    let groups: Vec<_> = ALLOWLIST
+        .iter()
+        .map(|category| {
+            let (group, rows) = category_group(state, category);
+            section.append(&group);
+            (
+                group.downgrade(),
+                rows.into_iter()
+                    .map(|(row, flag)| (row.downgrade(), flag))
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .collect();
+    let link = gtk::LinkButton::with_label(ALLOWLIST_SOURCE, "Roblox FastFlags allowlist");
+    section.append(&link);
 
-fn position_of(preset: Option<&PerformancePreset>) -> u32 {
-    let index = preset.and_then(|preset| {
-        PERFORMANCE_PRESETS
-            .iter()
-            .position(|candidate| std::ptr::eq(candidate, preset))
+    let filter = std::rc::Rc::new(glib::clone!(
+        #[weak]
+        search,
+        #[weak]
+        active_only,
+        #[weak]
+        quick_settings,
+        move |state: &AppState| {
+            let query = search.text().trim().to_lowercase();
+            let overrides_only = active_only.is_active();
+            quick_settings.set_visible(query.is_empty() && !overrides_only);
+            let flags = state.fast_flags();
+            for (group, rows) in &groups {
+                let Some(group) = group.upgrade() else {
+                    continue;
+                };
+                let mut has_match = false;
+                for (row, flag) in rows {
+                    let Some(row) = row.upgrade() else { continue };
+                    let value = flags.0.get(flag.name);
+                    let value_matches =
+                        value.is_some_and(|value| value.as_text().to_lowercase().contains(&query));
+                    let visible = (!overrides_only || value.is_some())
+                        && (flag.name.to_lowercase().contains(&query)
+                            || flag.title.to_lowercase().contains(&query)
+                            || value_matches);
+                    row.set_visible(visible);
+                    has_match |= visible;
+                }
+                group.set_visible(has_match);
+            }
+        }
+    ));
+    state.follow_properties(&["fast-flags"], {
+        let filter = filter.clone();
+        move |state| filter(state)
     });
-    index.map_or(0, |index| index as u32 + 1)
+    search.connect_search_changed(glib::clone!(
+        #[weak]
+        state,
+        #[strong]
+        filter,
+        move |_| filter(&state)
+    ));
+    active_only.connect_toggled(glib::clone!(
+        #[weak]
+        state,
+        move |_| filter(&state)
+    ));
+    section
 }
 
-fn show_applied_preset(row: &adw::ComboRow, state: &AppState) {
-    let selected_is_still_applied =
-        preset_at(row.selected()).is_some_and(|preset| is_applied(preset, state));
-    if selected_is_still_applied {
-        return;
+fn confirm_reset(parent: &gtk::Button, state: &AppState) {
+    let dialog = adw::AlertDialog::builder()
+        .heading("Reset all FastFlags?")
+        .body("This removes every override so Roblox can use its defaults.")
+        .build();
+    dialog.add_response("cancel", "Cancel");
+    dialog.add_response("reset", "Reset all");
+    dialog.set_close_response("cancel");
+    dialog.set_response_appearance("reset", adw::ResponseAppearance::Destructive);
+    dialog.connect_response(
+        Some("reset"),
+        glib::clone!(
+            #[strong]
+            state,
+            move |_, _| state.set_fast_flags(FastFlags::default())
+        ),
+    );
+    dialog.present(Some(parent));
+}
+
+fn texture_preset_group(state: &AppState) -> adw::PreferencesGroup {
+    let row = adw::ActionRow::builder()
+        .title("Texture quality")
+        .subtitle("Change only the texture overrides")
+        .build();
+    for (label, value) in [("Default", None), ("Low", Some(0))] {
+        let button = gtk::Button::with_label(label);
+        button.set_valign(gtk::Align::Center);
+        button.connect_clicked(glib::clone!(
+            #[strong]
+            state,
+            move |_| {
+                let updated = state
+                    .fast_flags()
+                    .with(TEXTURE_ENABLED, value.map(|_| FastFlagValue::Toggle(true)))
+                    .with(TEXTURE_QUALITY, value.map(FastFlagValue::Number));
+                if state.fast_flags() != updated {
+                    state.set_fast_flags(updated);
+                }
+            }
+        ));
+        row.add_suffix(&button);
     }
-
-    let most_specific_applied_preset = PERFORMANCE_PRESETS
-        .iter()
-        .filter(|preset| is_applied(preset, state))
-        .max_by_key(|preset| preset.flags.len());
-    let position = position_of(most_specific_applied_preset);
-    if row.selected() != position {
-        row.set_selected(position);
-    }
+    let group = adw::PreferencesGroup::builder()
+        .title("Quick settings")
+        .build();
+    group.add(&row);
+    group
 }
 
-fn show_preset_description(row: &adw::ComboRow) {
-    let description =
-        preset_at(row.selected()).map_or(CUSTOM_PRESET_DESCRIPTION, |preset| preset.description);
-    row.set_subtitle(description);
-}
-
-fn is_applied(preset: &PerformancePreset, state: &AppState) -> bool {
-    let flags = state.fast_flags();
-    preset
-        .flags
-        .iter()
-        .all(|(name, value)| flags.get(name).as_ref() == Some(value))
-}
-
-fn apply_preset(state: &AppState, preset: &PerformancePreset) {
-    if is_applied(preset, state) {
-        return;
-    }
-    let mut new_flags = state.fast_flags().clone();
-    for (name, value) in preset.flags {
-        new_flags = new_flags.with(name, Some(value.clone()));
-    }
-    state.set_fast_flags(new_flags);
-}
-
-fn category_group(state: &AppState, category: &FlagCategory) -> adw::PreferencesGroup {
+fn category_group(
+    state: &AppState,
+    category: &'static FlagCategory,
+) -> (
+    adw::PreferencesGroup,
+    Vec<(gtk::Widget, &'static AllowlistedFlag)>,
+) {
     let group = adw::PreferencesGroup::builder()
         .title(category.title)
         .build();
-
-    for flag in category.flags {
-        match flag.kind {
-            FlagKind::Toggle => group.add(&toggle_row(state, flag)),
-            FlagKind::Number => group.add(&number_row(state, flag)),
-        }
-    }
-
-    group
+    let rows = category
+        .flags
+        .iter()
+        .map(|flag| {
+            let row: gtk::Widget = match flag.kind {
+                FlagKind::Toggle => toggle_row(state, flag).upcast(),
+                FlagKind::Number => number_row(state, flag).upcast(),
+            };
+            group.add(&row);
+            (row, flag)
+        })
+        .collect();
+    (group, rows)
 }
 
 fn toggle_row(state: &AppState, flag: &'static AllowlistedFlag) -> adw::ComboRow {
@@ -314,14 +247,21 @@ fn toggle_row(state: &AppState, flag: &'static AllowlistedFlag) -> adw::ComboRow
     let row = adw::ComboRow::builder()
         .title(flag.title)
         .subtitle(flag.name)
+        .use_markup(false)
         .model(&gtk::StringList::new(&ToggleSetting::labels()))
         .selected(current_setting.position())
         .build();
 
+    let syncing = std::rc::Rc::new(std::cell::Cell::new(false));
     row.connect_selected_notify(glib::clone!(
+        #[strong]
+        syncing,
         #[strong]
         state,
         move |row| {
+            if syncing.get() {
+                return;
+            }
             let setting =
                 ToggleSetting::at_position(row.selected()).unwrap_or(ToggleSetting::Default);
             set_flag(&state, flag.name, setting.value());
@@ -335,7 +275,9 @@ fn toggle_row(state: &AppState, flag: &'static AllowlistedFlag) -> adw::ComboRow
             move |state, _| {
                 let setting = ToggleSetting::of(state.fast_flags().get(flag.name));
                 if row.selected() != setting.position() {
+                    syncing.set(true);
                     row.set_selected(setting.position());
+                    syncing.set(false);
                 }
             }
         ),
@@ -344,79 +286,65 @@ fn toggle_row(state: &AppState, flag: &'static AllowlistedFlag) -> adw::ComboRow
     row
 }
 
-fn number_row(state: &AppState, flag: &'static AllowlistedFlag) -> adw::ActionRow {
-    let current_number = match state.fast_flags().get(flag.name) {
-        Some(FastFlagValue::Number(number)) => number.to_string(),
-        _ => String::new(),
-    };
+fn number_row(state: &AppState, flag: &'static AllowlistedFlag) -> adw::EntryRow {
+    let current_number = number_text(state, flag);
 
-    let entry = gtk::Entry::builder()
+    let entry = adw::EntryRow::builder()
+        .title(format!("{} · {}", flag.title, flag.name))
         .text(current_number)
-        .placeholder_text("Default")
         .input_purpose(gtk::InputPurpose::Number)
-        .width_chars(8)
-        .xalign(1.0)
-        .valign(gtk::Align::Center)
+        .show_apply_button(true)
+        .use_markup(false)
         .build();
 
-    let row = adw::ActionRow::builder()
-        .title(flag.title)
-        .subtitle(flag.name)
-        .activatable_widget(&entry)
-        .build();
-    row.add_suffix(&entry);
-
-    entry.connect_changed(glib::clone!(
+    entry.connect_changed(|entry| {
+        let text = entry.text();
+        let text = text.trim();
+        show_number_is_valid(entry, text.is_empty() || text.parse::<i64>().is_ok());
+    });
+    entry.connect_apply(glib::clone!(
         #[strong]
         state,
         move |entry| {
             let text = entry.text();
             let text = text.trim();
             if text.is_empty() {
-                show_number_is_valid(entry, true);
                 set_flag(&state, flag.name, None);
             } else if let Ok(number) = text.parse() {
-                show_number_is_valid(entry, true);
                 set_flag(&state, flag.name, Some(FastFlagValue::Number(number)));
             } else {
-                show_number_is_valid(entry, false);
+                entry.set_text(&number_text(&state, flag));
             }
         }
     ));
+    let shown = std::cell::RefCell::new(number_text(state, flag));
     state.connect_notify_local(
         Some("fast-flags"),
         glib::clone!(
             #[weak]
             entry,
-            move |state, _| show_number_from_state(&entry, flag, state)
+            move |state, _| {
+                let saved = number_text(state, flag);
+                if *shown.borrow() != saved {
+                    entry.set_text(&saved);
+                    shown.replace(saved);
+                }
+            }
         ),
     );
 
-    row
+    entry
 }
 
-fn show_number_from_state(entry: &gtk::Entry, flag: &AllowlistedFlag, state: &AppState) {
-    let typed = entry.text();
-    let typed = typed.trim();
-    let typed_number = typed.parse::<i64>().ok();
-    if !typed.is_empty() && typed_number.is_none() {
-        return;
-    }
-
-    let saved_number = match state.fast_flags().get(flag.name) {
-        Some(FastFlagValue::Number(number)) => Some(number),
-        _ => None,
-    };
-    if typed_number != saved_number {
-        entry.set_text(
-            &saved_number
-                .map(|number| number.to_string())
-                .unwrap_or_default(),
-        );
-    }
+fn number_text(state: &AppState, flag: &AllowlistedFlag) -> String {
+    state
+        .fast_flags()
+        .get(flag.name)
+        .map(|value| value.as_text())
+        .unwrap_or_default()
 }
 
-fn show_number_is_valid(entry: &gtk::Entry, is_valid: bool) {
+fn show_number_is_valid(entry: &adw::EntryRow, is_valid: bool) {
     if is_valid {
         entry.remove_css_class(INVALID_NUMBER_STYLE);
         entry.set_tooltip_text(None);
@@ -429,5 +357,8 @@ fn show_number_is_valid(entry: &gtk::Entry, is_valid: bool) {
 }
 
 fn set_flag(state: &AppState, name: &str, value: Option<FastFlagValue>) {
-    state.set_fast_flags(state.fast_flags().with(name, value));
+    let flags = state.fast_flags();
+    if flags.get(name) != value {
+        state.set_fast_flags(flags.with(name, value));
+    }
 }

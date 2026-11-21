@@ -36,7 +36,7 @@ pub fn status_text(state: &AppState, client: Client) -> String {
         format!("Opening {}…", client.name())
     } else if state.is_installed(client) {
         format!(
-            "{} {} • Quadra {}",
+            "{} {} • Tiltframe {}",
             client.name(),
             state.version_of(client),
             QUADRA_VERSION

@@ -9,13 +9,13 @@ use crate::state::{AppState, LaunchMode, Theme};
 use adw::prelude::*;
 
 pub fn general_section(state: &AppState) -> gtk::Box {
-    let group = adw::PreferencesGroup::builder().title("Quadra").build();
+    let group = adw::PreferencesGroup::builder().title("Tiltframe").build();
 
-    let launch_mode_row = choice_row::<LaunchMode>(state, "launch-mode", "When Quadra starts");
+    let launch_mode_row = choice_row::<LaunchMode>(state, "launch-mode", "When Tiltframe starts");
     launch_mode_row.set_subtitle("Settings stay available from the system tray");
 
     let run_in_background_row = switch_row(state, "run-in-background", "Run in the background");
-    run_in_background_row.set_subtitle("Keep Quadra in the system tray after its window closes");
+    run_in_background_row.set_subtitle("Keep Tiltframe in the system tray after its window closes");
 
     let theme_row = choice_row::<Theme>(state, "theme", "App theme");
     theme_row.set_subtitle("Change the theme to what you like.");
@@ -23,7 +23,7 @@ pub fn general_section(state: &AppState) -> gtk::Box {
     let advanced_row = switch_row(state, "advanced-settings-visible", "Advanced settings");
     advanced_row.set_subtitle("Only enable if you know what you're doing.");
 
-    group.add(&launcher_version_row(state));
+    group.add(&launcher_version_row());
     group.add(&launch_mode_row);
     group.add(&run_in_background_row);
     group.add(&theme_row);

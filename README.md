@@ -1,115 +1,27 @@
-<p align="center">
-  <img src="data/icons/hicolor/256x256/apps/org.quadrahq.Quadra.png" alt="Quadra logo" width="160">
-</p>
+# Tiltframe
 
-<h1 align="center">
- Quadra, by QuadraHQ.
-</h1>
+Tiltframe is a Linux launcher for the macOS Roblox Player and Studio. It is based on [Quadra 0.50.4](https://github.com/QuadraHQ/Quadra/tree/v0.50.4), uses [Rosemary](https://github.com/QuadraHQ/rosemary-fork) for compatibility, and takes inspiration from [Fishstrap](https://github.com/fishstrap/fishstrap) for FastFlag management.
 
- <p align="center">
-    <a href="https://discord.gg/W8jXfngc8z">
-      <img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord" width="140">
-   </a>
- </p>
+## Install from source
 
-<p align="center">
-  A bootstrapper for the macOS Roblox Player & Studio client, running on Linux through <a href="https://github.com/microlift/rosemary">Rosemary</a>.
-</p>
+Use a Linux x86-64 system with a recent stable Rust toolchain, a C toolchain, pkg-config, GTK 4.18+, libadwaita 1.7+, and Pango 1.56+ development files. Clang is optional for VR support.
 
-## Install
-
-```
-curl -fsSL https://quadrahq.org/install.sh | bash
-```
-
-This installs the newest Quadra as an AppImage in `~/.local/bin` and adds it to the app menu. Run it again to update.
-Options go after `bash -s --`, for example `curl -fsSL https://quadrahq.org/install.sh | bash -s -- --flatpak`:
-
-- `--flatpak`: install the Flatpak bundle instead
-- `--native`: build Quadra on this computer instead
-- `--tarball`: same as native, but with pre-compiled binaries
-- `--version TAG`: install a specific release, such as `v0.50.0-alpha.3`
-- `--uninstall`: remove Quadra but keep its data and your Roblox sign-in; add `--purge` to delete those too
-
-The installer checks every download against the release's `SHA256SUMS` before installing it.
-
-## Build instructions
-
-**Prerequisites:**
-
-- Git
-- Rust 1.88+
-- GTK4, `gtk4-layer-shell` and libadwaita
-- clang for VR support (optional; without it Quadra builds without VR)
-- flatpak-builder for building Flatpaks
-- curl for building AppImages
-
-**Fetch source:**
-
-```
-git clone https://github.com/QuadraHQ/quadra && cd quadra
-```
-
-**Build directly from source:**
-
-```
-cargo build
-```
-
-**Build Flatpak:**
-
-```
-cd flatpak && flatpak-builder --force-clean --user --install-deps-from=flathub --repo=repo --install build-dir org.quadrahq.Quadra.yml
-```
-
-**Build AppImage:**
-
-```
-./appimage/build.sh
-```
-
-The AppImage is written to `appimage/Quadra-x86_64.AppImage`.
-
-**Nix:**
-
-Try it without installing:
+From this checkout, run:
 
 ```sh
-nix run github:QuadraHQ/quadra
+bash install.sh
 ```
 
-Flake input:
+Open **Tiltframe** from your app menu. For a development build, use `cargo run --locked`.
 
-```Nix
-{
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    quadra.url = "github:QuadraHQ/quadra";
-  };
-}
-```
+Tiltframe uses separate `tiltframe` directories under your XDG config, data, and cache directories. It downloads the Roblox client and Rosemary on first use. You can transfer FastFlags from another launcher by exporting them as JSON and importing them from **Settings → FastFlags** in Tiltframe.
 
-```Nix
-{
-  environment.systemPackages = with pkgs; [
-    inputs.quadra.packages.${pkgs.stdenv.hostPlatform.system}.quadra
-  ];
-}
-```
+## FastFlags
 
-## Relevant directories
+Search by flag name or value. Turn on **Overrides only** to review what you changed. Use **Quick settings** to set low texture quality or return textures to their defaults. Under **Custom overrides**, you can edit individual entries or import and export JSON. **Reset all** restores Roblox defaults by removing all overrides.
 
-- `~/.local/share/quadra`: Where Quadra stores its data
-- `~/.local/share/quadra/prefix`: The Rosemary prefix Roblox runs in
-- `~/.local/share/quadra/rosemary/<version>`: Installed Rosemary versions
-- `~/.local/share/quadra/roblox`: The Roblox Player installation
-- `~/.local/share/quadra/logs`: Quadra and Roblox logs
-- `~/.local/share/quadra/modifications`: Your own files that Quadra overlays onto the Roblox client (see the Mods settings)
-- `~/.local/share/quadra/mods-backup`: The original Roblox files that mods replaced, so they can be put back
-- `~/.cache/quadra/downloads`: Downloaded files, such as Rosemary and Roblox packages
-- `~/.cache/quadra/vr`: The VR library Rosemary loads into Roblox
-- `~/.local/share/butter/runners` and `~/.var/app/io.github.microlift.butter/data/butter/runners`: Butter runner directories that Quadra also detects runners from
+Roblox decides which local overrides it applies. The launcher writes Player settings as `ClientAppSettings.json` and checks the macOS client's published allowlist.
 
 ## License
 
-GPL-3.0-only.
+Tiltframe is a GPL-3.0-only fork of Quadra. The original project and contributors are credited in the source history. See [LICENSE](LICENSE).

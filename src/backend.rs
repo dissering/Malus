@@ -70,7 +70,6 @@ pub fn initialize(state: &AppState) {
         refresh_selected_runner_status,
     );
     state.connect_notify_local(Some("prefix"), |state, _| account::refresh(state));
-    updater::initialize(state);
     quadra_rosemary::look_for_update(state);
     fast_flag_allowlist::initialize();
     fast_flags::initialize(state);
@@ -309,18 +308,6 @@ pub fn load_regions(state: &AppState) {
 
 pub fn flag_is_ignored(name: &str) -> bool {
     fast_flag_allowlist::is_ignored(name)
-}
-
-pub fn check_for_updates(state: &AppState) {
-    updater::check(state);
-}
-
-pub fn install_update(state: &AppState) {
-    updater::install(state);
-}
-
-pub fn can_update_itself() -> bool {
-    updater::can_update_itself()
 }
 
 pub fn hardware_report() -> String {
