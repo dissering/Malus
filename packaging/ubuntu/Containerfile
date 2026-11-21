@@ -1,0 +1,10 @@
+FROM docker.io/library/ubuntu:26.04
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        build-essential ca-certificates cargo clang desktop-file-utils dpkg-dev \
+        libadwaita-1-dev libglib2.0-dev libgtk-4-dev libpango1.0-dev lld pkg-config rustc \
+    && apt-get clean
+
+WORKDIR /src
+CMD ["bash", "packaging/ubuntu/build-deb.sh", "/out"]

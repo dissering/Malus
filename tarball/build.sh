@@ -16,6 +16,8 @@ install -Dm644 ../data/io.github.dissering.Tiltframe.desktop \
 mkdir -p "$root/share/icons"
 cp -r ../data/icons/hicolor "$root/share/icons/"
 install -Dm644 ../LICENSE "$root/LICENSE"
+install -Dm644 ../assets/lucide/LICENSE "$root/licenses/Lucide-LICENSE"
+install -Dm644 -t "$root/licenses" ../assets/fonts/*-OFL.txt
 
 tar --sort=name --owner=0 --group=0 --numeric-owner \
     -C "$staging" -czf "$name.tar.gz" "$name"

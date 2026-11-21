@@ -14,7 +14,7 @@ cd Malus
 ./install.sh
 ```
 
-Open Malus from the app menu. The first launch downloads Roblox and Rosemary.
+Open Malus from the app menu. The first launch downloads Roblox and Rosemary. See [Linux packages](packaging/README.md) for Flatpak, Arch, Fedora, and Ubuntu build instructions.
 
 ## Commands
 

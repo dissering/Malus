@@ -73,7 +73,9 @@ modules:
         export RUSTFLAGS="$RUSTFLAGS -C link-arg=-Wl,-rpath,/app/lib64 -C link-arg=-Wl,-rpath,/app/lib"
         cargo --offline build --release --locked
       - install -Dm755 target/release/malus -t /app/bin/
-      - install -Dm644 LICENSE -t /app/share/licenses/quadra/
+      - install -Dm644 LICENSE /app/share/licenses/malus/LICENSE
+      - install -Dm644 assets/lucide/LICENSE /app/share/licenses/malus/Lucide-LICENSE
+      - install -Dm644 -t /app/share/licenses/malus assets/fonts/*-OFL.txt
       - mkdir -p /app/share/icons && cp -r data/icons/hicolor /app/share/icons/
       - install -Dm644 flatpak/io.github.dissering.Tiltframe.desktop -t /app/share/applications/
       - install -Dm644 data/io.github.dissering.Tiltframe.xml -t /app/share/mime/packages/
