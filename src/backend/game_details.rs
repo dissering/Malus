@@ -45,24 +45,20 @@ struct Icon {
 }
 
 pub fn fetch(place_id: u64) -> anyhow::Result<GameDetails> {
+    fetch_universe(universe_for_place(place_id)?)
+}
+
+pub fn universe_for_place(place_id: u64) -> anyhow::Result<u64> {
     let universe: Universe = get_json(&format!(
         "https://apis.roblox.com/universes/v1/places/{place_id}/universe"
     ))?;
-    let universe_id = universe
+    universe
         .universe_id
-        .with_context(|| format!("Place {place_id} doesn't belong to a game"))?;
-    fetch_universe(universe_id)
+        .with_context(|| format!("Place {place_id} doesn't belong to a game"))
 }
 
 pub fn fetch_universe(universe_id: u64) -> anyhow::Result<GameDetails> {
-    let games: Listing<Game> = get_json(&format!(
-        "https://games.roblox.com/v1/games?universeIds={universe_id}"
-    ))?;
-    let game = games
-        .data
-        .into_iter()
-        .next()
-        .with_context(|| format!("Roblox has no details for game {universe_id}"))?;
+    let game = game_info(universe_id)?;
 
     Ok(GameDetails {
         name: game.name,
@@ -73,6 +69,21 @@ pub fn fetch_universe(universe_id: u64) -> anyhow::Result<GameDetails> {
             None
         }),
     })
+}
+
+pub fn name_for_place(place_id: u64) -> anyhow::Result<String> {
+    Ok(game_info(universe_for_place(place_id)?)?.name)
+}
+
+fn game_info(universe_id: u64) -> anyhow::Result<Game> {
+    let games: Listing<Game> = get_json(&format!(
+        "https://games.roblox.com/v1/games?universeIds={universe_id}"
+    ))?;
+    games
+        .data
+        .into_iter()
+        .next()
+        .with_context(|| format!("Roblox has no details for game {universe_id}"))
 }
 
 fn icon_url(universe_id: u64) -> anyhow::Result<Option<String>> {

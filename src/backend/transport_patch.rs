@@ -33,7 +33,7 @@ pub fn prepare(force_raknet: bool) {
         Ok(Outcome::Changed) => eprintln!("Force RakNet: restored the untouched Roblox"),
         Ok(Outcome::AlreadySet) => {}
         Ok(Outcome::UnknownRelease) if force_raknet => eprintln!(
-            "Force RakNet: Quadra doesn't know this Roblox version, so it was left untouched"
+            "Force RakNet: Malus doesn't know this Roblox version, so it was left untouched"
         ),
         Ok(Outcome::UnknownRelease) => {}
         Err(error) => eprintln!("Force RakNet: couldn't change Roblox: {error:#}"),

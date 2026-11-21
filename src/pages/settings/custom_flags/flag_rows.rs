@@ -1,103 +1,183 @@
 use crate::components::ignored_flag_icon::{ignored_flag_icon, show_if_ignored};
 use crate::pages::settings::fast_flag_allowlist::is_listed;
-use crate::state::{AppState, FastFlagValue, FastFlags};
-use crate::utils::scroll_into_view_once_shown;
+use crate::state::{AppState, FastFlagValue};
 use adw::prelude::*;
 use gtk::glib;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub type FlagRows = Rc<RefCell<Vec<adw::EntryRow>>>;
+pub type FlagRows = Rc<RefCell<Vec<adw::ActionRow>>>;
 
 pub fn show_custom_flags(group: &adw::PreferencesGroup, rows: &FlagRows, state: &AppState) {
-    for row in rows.borrow_mut().drain(..) {
+    let mut rows = rows.borrow_mut();
+    let flags = state.fast_flags();
+    let custom: Vec<_> = flags
+        .0
+        .iter()
+        .filter(|(name, _)| !is_listed(name))
+        .collect();
+    if rows.len() == custom.len()
+        && rows.iter().zip(&custom).all(|(row, (name, value))| {
+            row.title().as_str() == name.as_str()
+                && row
+                    .subtitle()
+                    .is_some_and(|subtitle| subtitle.as_str() == value.as_text())
+        })
+    {
+        return;
+    }
+    for row in rows.drain(..) {
         group.remove(&row);
     }
-    for (name, value) in &state.fast_flags().0 {
-        if !is_listed(name) {
-            add_row(group, rows, state, &format!("{name}={}", value.as_text()));
-        }
+    for (name, value) in custom {
+        let row = flag_row(state, name, value);
+        group.add(&row);
+        rows.push(row);
     }
 }
 
-pub fn add_flag(group: &adw::PreferencesGroup, rows: &FlagRows, state: &AppState) {
-    let row = add_row(group, rows, state, "");
-    scroll_into_view_once_shown(&row);
-    row.grab_focus();
+pub fn filter_rows(group: &adw::PreferencesGroup, rows: &FlagRows, query: &str) {
+    let query = query.trim().to_lowercase();
+    let rows = rows.borrow();
+    let mut matches = 0;
+    for row in rows.iter() {
+        let visible = row.title().to_lowercase().contains(&query)
+            || row
+                .subtitle()
+                .is_some_and(|value| value.to_lowercase().contains(&query));
+        row.set_visible(visible);
+        matches += usize::from(visible);
+    }
+    group.set_description(match (rows.is_empty(), matches) {
+        (true, _) => Some("No custom overrides"),
+        (false, 0) => Some("No matching custom overrides"),
+        _ => None,
+    });
 }
 
-fn add_row(
-    group: &adw::PreferencesGroup,
-    rows: &FlagRows,
-    state: &AppState,
-    text: &str,
-) -> adw::EntryRow {
-    let ignored_icon = ignored_flag_icon();
-    let remove_button = gtk::Button::builder()
-        .icon_name("user-trash-symbolic")
-        .tooltip_text("Remove this flag")
-        .css_classes(["flat"])
-        .valign(gtk::Align::Center)
+fn flag_row(state: &AppState, name: &str, value: &FastFlagValue) -> adw::ActionRow {
+    let row = adw::ActionRow::builder()
+        .title(name)
+        .subtitle(value.as_text())
+        .use_markup(false)
+        .subtitle_lines(1)
         .build();
 
-    let row = adw::EntryRow::builder()
-        .title("NAME=value")
-        .text(text)
-        .build();
-    row.add_prefix(&ignored_icon);
-    row.add_suffix(&remove_button);
-    group.add(&row);
-    rows.borrow_mut().push(row.clone());
-    show_if_ignored(&ignored_icon, flag_of(text).0);
+    let warning = ignored_flag_icon();
+    show_if_ignored(&warning, name);
+    row.add_prefix(&warning);
 
-    row.connect_changed(glib::clone!(
-        #[strong]
+    let edit = row_button("malus-pencil-symbolic", "Edit override");
+    row.add_suffix(&edit);
+    row.set_activatable_widget(Some(&edit));
+    let remove = row_button("malus-trash-symbolic", "Remove override");
+    row.add_suffix(&remove);
+
+    let name = name.to_owned();
+    edit.connect_clicked(glib::clone!(
+        #[weak]
         state,
         #[strong]
-        rows,
-        move |row| {
-            show_if_ignored(&ignored_icon, flag_of(&row.text()).0);
-            save_flags(&state, &rows);
-        }
+        name,
+        move |button| show_editor(button, &state, Some(&name))
     ));
-    remove_button.connect_clicked(glib::clone!(
+    remove.connect_clicked(glib::clone!(
         #[weak]
-        group,
-        #[weak]
-        row,
-        #[strong]
         state,
-        #[strong]
-        rows,
-        move |_| {
-            rows.borrow_mut().retain(|other| *other != row);
-            group.remove(&row);
-            save_flags(&state, &rows);
-        }
+        move |_| state.set_fast_flags(state.fast_flags().with(&name, None))
     ));
-
     row
 }
 
-fn save_flags(state: &AppState, rows: &FlagRows) {
-    let mut flags: std::collections::BTreeMap<String, FastFlagValue> = state
-        .fast_flags()
-        .0
-        .into_iter()
-        .filter(|(name, _)| is_listed(name))
-        .collect();
-
-    for row in rows.borrow().iter() {
-        let text = row.text();
-        let (name, value) = flag_of(&text);
-        if !name.is_empty() && !is_listed(name) {
-            flags.insert(name.to_owned(), FastFlagValue::parse(value));
-        }
-    }
-    state.set_fast_flags(FastFlags(flags));
+fn row_button(icon: &str, tooltip: &str) -> gtk::Button {
+    gtk::Button::builder()
+        .icon_name(icon)
+        .tooltip_text(tooltip)
+        .valign(gtk::Align::Center)
+        .css_classes(["flat"])
+        .build()
 }
 
-fn flag_of(text: &str) -> (&str, &str) {
-    let (name, value) = text.split_once('=').unwrap_or((text, ""));
-    (name.trim(), value)
+pub fn show_editor(parent: &gtk::Button, state: &AppState, existing: Option<&str>) {
+    let current = existing.and_then(|name| state.fast_flags().get(name));
+    let name = adw::EntryRow::builder()
+        .title("Flag name")
+        .text(existing.unwrap_or_default())
+        .build();
+    let value = adw::EntryRow::builder()
+        .title("Value")
+        .text(
+            current
+                .as_ref()
+                .map(FastFlagValue::as_text)
+                .unwrap_or_default(),
+        )
+        .build();
+    let fields = adw::PreferencesGroup::new();
+    fields.add(&name);
+    fields.add(&value);
+
+    let dialog = adw::AlertDialog::builder()
+        .heading(if existing.is_some() {
+            "Edit override"
+        } else {
+            "Add override"
+        })
+        .extra_child(&fields)
+        .build();
+    dialog.add_response("cancel", "Cancel");
+    dialog.add_response("save", "Save");
+    dialog.set_close_response("cancel");
+    dialog.set_default_response(Some("save"));
+    dialog.set_response_appearance("save", adw::ResponseAppearance::Suggested);
+
+    let existing = existing.map(str::to_owned);
+    let validate = glib::clone!(
+        #[weak]
+        state,
+        #[weak]
+        dialog,
+        #[strong]
+        existing,
+        move |name: &adw::EntryRow| {
+            let text = name.text();
+            let name = text.trim();
+            let problem = if name.is_empty() || name.contains([' ', '\t', '\n', '=']) {
+                "Enter a flag name without spaces or equals signs."
+            } else if is_listed(name) {
+                "Edit this flag under its settings category."
+            } else if existing.as_deref() != Some(name) && state.fast_flags().get(name).is_some() {
+                "This flag already has an override."
+            } else {
+                ""
+            };
+            dialog.set_body(problem);
+            dialog.set_response_enabled("save", problem.is_empty());
+        }
+    );
+    validate(&name);
+    name.connect_changed(validate);
+    dialog.connect_response(
+        Some("save"),
+        glib::clone!(
+            #[weak]
+            state,
+            move |_, _| {
+                let entered_name = name.text();
+                let entered_name = entered_name.trim();
+                let text = value.text();
+                let new_value = match current.as_ref() {
+                    Some(current) if current.as_text() == text.as_str() => current.clone(),
+                    _ => FastFlagValue::parse(&text),
+                };
+                let mut flags = state.fast_flags();
+                if let Some(existing) = &existing {
+                    flags.0.remove(existing);
+                }
+                flags.0.insert(entered_name.to_owned(), new_value);
+                state.set_fast_flags(flags);
+            }
+        ),
+    );
+    dialog.present(Some(parent));
 }

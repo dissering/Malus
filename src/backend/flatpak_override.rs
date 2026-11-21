@@ -1,4 +1,4 @@
-const QUADRA_FLATPAK_ID: &str = "org.quadrahq.Quadra";
+const QUADRA_FLATPAK_ID: &str = "io.github.dissering.Tiltframe";
 
 pub fn quadra_id() -> String {
     std::env::var("FLATPAK_ID").unwrap_or_else(|_| QUADRA_FLATPAK_ID.to_owned())
@@ -39,7 +39,7 @@ mod tests {
                 ["xdg-run/a", "xdg-run/b:ro", "xdg-run/a"]
             ),
             "flatpak override --user --filesystem=xdg-run/a --filesystem=xdg-run/b:ro \
-             org.quadrahq.Quadra"
+             io.github.dissering.Tiltframe"
         );
     }
 
@@ -47,11 +47,11 @@ mod tests {
     fn allows_and_disallows_a_device() {
         assert_eq!(
             device_command(QUADRA_FLATPAK_ID, "all", true),
-            "flatpak override --user --device=all org.quadrahq.Quadra"
+            "flatpak override --user --device=all io.github.dissering.Tiltframe"
         );
         assert_eq!(
             device_command(QUADRA_FLATPAK_ID, "all", false),
-            "flatpak override --user --nodevice=all org.quadrahq.Quadra"
+            "flatpak override --user --nodevice=all io.github.dissering.Tiltframe"
         );
     }
 }

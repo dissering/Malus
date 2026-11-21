@@ -9,6 +9,7 @@ pub struct ModSettings {
     pub custom_cursor: PathBuf,
     pub custom_font: PathBuf,
     pub custom_mods: bool,
+    pub disabled_mod_packs: Vec<String>,
 }
 
 impl ModSettings {
@@ -21,6 +22,7 @@ impl ModSettings {
             custom_cursor: state.custom_cursor().into(),
             custom_font: state.custom_font().into(),
             custom_mods: state.custom_mods(),
+            disabled_mod_packs: state.disabled_mod_packs(),
         }
     }
 }

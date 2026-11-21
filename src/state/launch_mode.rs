@@ -16,7 +16,7 @@ impl Choice for LaunchMode {
 
     fn label(self) -> &'static str {
         match self {
-            Self::OpenQuadra => "Open Quadra",
+            Self::OpenQuadra => "Open Malus",
             Self::LaunchRoblox => "Launch Roblox",
         }
     }

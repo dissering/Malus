@@ -45,7 +45,7 @@ mod tests {
 
     const FLATPAK_INFO_WITH_ALL_DEVICES: &str = "\
 [Application]
-name=org.quadrahq.Quadra
+name=io.github.dissering.Tiltframe
 runtime=runtime/org.gnome.Platform/x86_64/51
 
 [Context]
@@ -67,6 +67,6 @@ devices=nothing;
 
     #[test]
     fn finds_no_devices_without_a_context() {
-        assert!(granted_devices("[Application]\nname=org.quadrahq.Quadra\n").is_empty());
+        assert!(granted_devices("[Application]\nname=io.github.dissering.Tiltframe\n").is_empty());
     }
 }

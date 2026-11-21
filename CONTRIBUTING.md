@@ -1,6 +1,6 @@
-# Contributing to Quadra
+# Contributing to Malus
 
-Here are the guidelines when you contribute to Quadra:
+Run `cargo test --locked` and `git diff --check` before submitting changes. For graphics or performance changes, include the GPU, renderer, resolution, and a repeatable test scene.
 
 ## Generative AI usage
 
@@ -8,7 +8,7 @@ Adhere to [AI_USAGE_POLICY.md](AI_USAGE_POLICY.md). AI agents must NOT open and 
 
 ## Commits style
 
-Quadra follows/derives the Linux commit style. For commit messages, write something like in this example:
+Use a short, scoped commit message. For commit messages, write something like in this example:
 
 ```
 scope/changed folder: what has changed

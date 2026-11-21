@@ -90,5 +90,5 @@ jobs:
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: quadra.flatpak
-          manifest-path: flatpak/org.quadrahq.Quadra.yml
+          manifest-path: flatpak/io.github.dissering.Tiltframe.yml
           cache-key: flatpak-builder-${{ github.sha }}

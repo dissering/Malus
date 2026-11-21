@@ -19,7 +19,9 @@ mod game_activity;
 mod game_details;
 mod handlers;
 mod launch;
+pub mod launch_profiles;
 mod launch_request;
+mod library;
 mod live_log;
 mod mangohud;
 mod mime_defaults;
@@ -45,10 +47,12 @@ pub use controller_access::{
     command_to_change as controller_access_command, is_granted as controller_access_is_granted,
 };
 pub use desktop_entries::Shortcut;
+pub use destination::game_uri;
 pub use discord_access::{MissingDiscordAccess, missing as missing_discord_access};
 pub use handlers::Handler;
 pub use launch::launch_wrapper_problem;
 pub use launch_request::{LaunchRequest, StudioTarget};
+pub use library::{Favorites, GamePreview, PreviewRequest, load_game_previews};
 pub use mods::{disabled_units as disabled_mods, enable_unit as enable_mod, folder as mods_folder};
 pub use quadra_rosemary::VERSION as QUADRA_ROSEMARY_VERSION;
 pub use vr_access::missing as missing_vr_access;
@@ -70,9 +74,9 @@ pub fn initialize(state: &AppState) {
         refresh_selected_runner_status,
     );
     state.connect_notify_local(Some("prefix"), |state, _| account::refresh(state));
-    updater::initialize(state);
     quadra_rosemary::look_for_update(state);
     fast_flag_allowlist::initialize();
+    roblox::archive_old_player_bundle();
     fast_flags::initialize(state);
     discord_presence::initialize(state);
     server_history::initialize(state);
@@ -82,6 +86,26 @@ pub fn initialize(state: &AppState) {
     if state.first_launch() {
         prefer_an_installed_runner(state);
     }
+}
+
+pub use mods::packs::list as mod_packs;
+
+pub fn import_mod_pack(state: &AppState, source: PathBuf, finished: impl FnOnce() + 'static) {
+    if state.busy() || state.running() {
+        state.report_error(
+            "Close Roblox and wait for the current task before importing a mod pack.",
+        );
+        return;
+    }
+
+    run_task(
+        state,
+        move |progress| {
+            progress.step("Importing mod pack");
+            mods::packs::import(&source)
+        },
+        move |_, ()| finished(),
+    );
 }
 
 pub fn refresh(state: &AppState) {
@@ -309,18 +333,6 @@ pub fn load_regions(state: &AppState) {
 
 pub fn flag_is_ignored(name: &str) -> bool {
     fast_flag_allowlist::is_ignored(name)
-}
-
-pub fn check_for_updates(state: &AppState) {
-    updater::check(state);
-}
-
-pub fn install_update(state: &AppState) {
-    updater::install(state);
-}
-
-pub fn can_update_itself() -> bool {
-    updater::can_update_itself()
 }
 
 pub fn hardware_report() -> String {

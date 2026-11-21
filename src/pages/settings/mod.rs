@@ -16,6 +16,7 @@ mod mangohud;
 mod mods;
 mod network;
 mod privacy;
+mod profiles;
 mod rosemary_options;
 mod rosemary_runtime;
 mod runtime;
@@ -44,26 +45,38 @@ pub fn settings_page(state: &AppState) -> gtk::Widget {
         &scrollable(&general_section(state)),
         Some("general"),
         "General",
-        "preferences-system-symbolic",
+        "malus-settings-symbolic",
+    );
+    stack.add_titled_with_icon(
+        &scrollable(&profiles::profiles_section(state)),
+        Some("profiles"),
+        "Profiles",
+        "malus-sliders-horizontal-symbolic",
+    );
+    let fast_flags = stack.add_titled_with_icon(
+        &scrollable(&fast_flags::fast_flags_section(state)),
+        Some("fast-flags"),
+        "FastFlags",
+        "malus-sliders-horizontal-symbolic",
     );
     let mods = stack.add_titled_with_icon(
         &scrollable(&mods_section(state)),
         Some("mods"),
         "Mods",
-        "application-x-addon-symbolic",
+        "malus-package-symbolic",
     );
     let vr = stack.add_titled_with_icon(
         &scrollable(&vr_section(state)),
         Some("vr"),
         "VR",
-        "input-gaming-symbolic",
+        "malus-glasses-symbolic",
     );
     if !is_running_in_flatpak() {
         stack.add_titled_with_icon(
             &scrollable(&integration_section(state)),
             Some("integration"),
             "Integration",
-            "view-app-grid-symbolic",
+            "malus-link-symbolic",
         );
     }
     let advanced_content = scrollable(&advanced_section(state));
@@ -71,7 +84,7 @@ pub fn settings_page(state: &AppState) -> gtk::Widget {
         &advanced_content,
         Some("advanced"),
         "Advanced",
-        "preferences-dev-symbolic",
+        "malus-terminal-symbolic",
     );
 
     let advanced_page = stack.page(&advanced_content);
@@ -80,12 +93,13 @@ pub fn settings_page(state: &AppState) -> gtk::Widget {
         .sync_create()
         .build();
 
+    show_only_while_roblox_is_selected(&fast_flags, state);
     show_only_while_roblox_is_selected(&mods, state);
     show_only_while_roblox_is_selected(&vr, state);
 
     let switcher = adw::ViewSwitcher::builder()
         .stack(&stack)
-        .policy(adw::ViewSwitcherPolicy::Wide)
+        .policy(adw::ViewSwitcherPolicy::Narrow)
         .halign(gtk::Align::Center)
         .margin_top(12)
         .margin_bottom(12)

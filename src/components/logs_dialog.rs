@@ -1,4 +1,4 @@
-use crate::state::AppState;
+use crate::state::{AppState, LOG_TAIL_LIMIT, LOG_TAIL_TARGET};
 use adw::prelude::*;
 use gtk::glib;
 
@@ -65,7 +65,15 @@ impl LiveLog {
 
     fn append(&self, text: &str) {
         let was_following_output = self.is_scrolled_to_bottom();
-        self.buffer.insert(&mut self.buffer.end_iter(), text);
+        let tail = text.ceil_char_boundary(text.len().saturating_sub(LOG_TAIL_LIMIT));
+        self.buffer
+            .insert(&mut self.buffer.end_iter(), &text[tail..]);
+        let count = self.buffer.char_count();
+        if count > LOG_TAIL_LIMIT as i32 {
+            let mut cutoff = self.buffer.iter_at_offset(count - LOG_TAIL_TARGET as i32);
+            self.buffer
+                .delete(&mut self.buffer.start_iter(), &mut cutoff);
+        }
         self.show_matching_page();
         if was_following_output {
             self.scroll_to_end();

@@ -8,16 +8,25 @@ const SAVE_RESPONSE: &str = "save";
 const IMPORT_RESPONSE: &str = "import";
 const EXPORT_FILE_NAME: &str = "ClientAppSettings.json";
 
-pub fn show_import(
-    parent: &impl IsA<gtk::Widget>,
-    state: &AppState,
-    when_imported: impl Fn(&AppState) + 'static,
-) {
+pub fn show_import(parent: &impl IsA<gtk::Widget>, state: &AppState) {
     let (view, scroller) = text_box(true);
+    let browse = gtk::Button::with_label("Open JSON file…");
+    browse.set_halign(gtk::Align::Start);
+    let input = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    input.append(&browse);
+    input.append(&scroller);
+    let window = parent.root().and_downcast::<gtk::Window>();
+    browse.connect_clicked(glib::clone!(
+        #[weak]
+        view,
+        #[strong]
+        state,
+        move |_| open_file(&state, window.as_ref(), &view)
+    ));
     let dialog = adw::AlertDialog::builder()
         .heading("Import FastFlags")
-        .body("Paste JSON like {\"FlagName\": value}. The flags are added to your current ones.")
-        .extra_child(&scroller)
+        .body("Open a JSON file or paste its contents. Matching overrides are replaced.")
+        .extra_child(&input)
         .build();
     dialog.add_response(CLOSE_RESPONSE, "Cancel");
     dialog.add_response(IMPORT_RESPONSE, "Import");
@@ -36,10 +45,8 @@ pub fn show_import(
                     false,
                 );
                 match state.fast_flags().merged_with_json(&text) {
-                    Ok((flags, _)) => {
-                        state.set_fast_flags(flags);
-                        when_imported(&state);
-                    }
+                    Ok((_, 0)) => state.report_error("The JSON has no importable FastFlags."),
+                    Ok((flags, _)) => state.set_fast_flags(flags),
                     Err(error) => {
                         state.report_error(&format!("Couldn't import the flags: {error}"))
                     }
@@ -86,6 +93,50 @@ pub fn show_export(parent: &impl IsA<gtk::Widget>, state: &AppState) {
     );
 
     dialog.present(Some(parent));
+}
+
+fn open_file(state: &AppState, window: Option<&gtk::Window>, view: &gtk::TextView) {
+    let filter = gtk::FileFilter::new();
+    filter.add_suffix("json");
+    let filters = gio::ListStore::new::<gtk::FileFilter>();
+    filters.append(&filter);
+    let dialog = gtk::FileDialog::builder()
+        .title("Open FastFlags")
+        .filters(&filters)
+        .modal(true)
+        .build();
+
+    dialog.open(
+        window,
+        gio::Cancellable::NONE,
+        glib::clone!(
+            #[weak]
+            state,
+            #[weak]
+            view,
+            move |chosen| {
+                let Some(file) = chosen.ok() else { return };
+                file.load_contents_async(
+                    gio::Cancellable::NONE,
+                    glib::clone!(
+                        #[weak]
+                        state,
+                        #[weak]
+                        view,
+                        move |result| match result {
+                            Ok((bytes, _)) => match std::str::from_utf8(&bytes) {
+                                Ok(text) =>
+                                    view.buffer().set_text(text.trim_start_matches('\u{feff}')),
+                                Err(_) => state.report_error("The JSON file must use UTF-8."),
+                            },
+                            Err(error) =>
+                                state.report_error(&format!("Couldn't open FastFlags: {error}")),
+                        }
+                    ),
+                );
+            }
+        ),
+    );
 }
 
 fn save_to_file(state: &AppState, window: Option<&gtk::Window>, json: String) {

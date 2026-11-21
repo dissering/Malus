@@ -8,7 +8,7 @@ use std::fs;
 use std::sync::RwLock;
 
 const SETTINGS_URL: &str =
-    "https://clientsettingscdn.roblox.com/v2/settings/application/PCDesktopClient";
+    "https://clientsettingscdn.roblox.com/v2/settings/application/MacDesktopClient";
 const ALLOWLIST_SETTING: &str = "DFStringAllowedPublicFlags";
 
 static ALLOWED: RwLock<Option<HashSet<String>>> = RwLock::new(None);

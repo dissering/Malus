@@ -29,15 +29,14 @@ enum Launcher {
 impl Launcher {
     fn current() -> anyhow::Result<Self> {
         if is_running_in_flatpak() {
-            let app_id =
-                std::env::var("FLATPAK_ID").context("Couldn't find Quadra's Flatpak ID")?;
+            let app_id = std::env::var("FLATPAK_ID").context("Couldn't find Malus's Flatpak ID")?;
             return Ok(Self::Flatpak { app_id });
         }
         match updater::running_appimage() {
             Some(appimage) => Ok(Self::Executable(appimage)),
             None => std::env::current_exe()
                 .map(Self::Executable)
-                .context("Couldn't find Quadra's executable"),
+                .context("Couldn't find Malus's executable"),
         }
     }
 }
@@ -146,30 +145,30 @@ impl DesktopEntry {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Shortcut {
-    Quadra,
+    Malus,
     Roblox,
     Studio,
 }
 
 impl Shortcut {
-    pub const ALL: [Self; 3] = [Self::Quadra, Self::Roblox, Self::Studio];
+    pub const ALL: [Self; 3] = [Self::Malus, Self::Roblox, Self::Studio];
 
     pub fn entry(self) -> DesktopEntry {
         let (file_name, name, description, command_line_option) = match self {
-            Self::Quadra => (
-                "org.quadrahq.Quadra.desktop",
+            Self::Malus => (
+                "io.github.dissering.Tiltframe.desktop",
                 "Quadra",
                 "Opens Quadra",
                 None,
             ),
             Self::Roblox => (
-                "org.quadrahq.Quadra.Roblox.desktop",
+                "io.github.dissering.Tiltframe.Roblox.desktop",
                 "Roblox",
                 "Starts Roblox without opening Quadra",
                 Some("--roblox"),
             ),
             Self::Studio => (
-                "org.quadrahq.Quadra.Studio.desktop",
+                "io.github.dissering.Tiltframe.Studio.desktop",
                 "Roblox Studio",
                 "Starts Roblox Studio without opening Quadra",
                 Some("--studio"),
@@ -225,34 +224,35 @@ mod tests {
 
     #[test]
     fn appimage_entries_start_the_appimage_itself() {
-        let launcher = Launcher::Executable(PathBuf::from("/home/someone/Apps/Quadra.AppImage"));
+        let launcher = Launcher::Executable(PathBuf::from("/home/someone/Apps/Tiltframe.AppImage"));
         assert_eq!(
             entry(Opens::Link, Some("--roblox")).exec(&launcher),
-            "/home/someone/Apps/Quadra.AppImage --roblox %u"
+            "/home/someone/Apps/Tiltframe.AppImage --roblox %u"
         );
     }
 
     #[test]
     fn paths_with_spaces_are_quoted() {
-        let launcher = Launcher::Executable(PathBuf::from("/home/someone/My Apps/Quadra.AppImage"));
+        let launcher =
+            Launcher::Executable(PathBuf::from("/home/someone/My Apps/Tiltframe.AppImage"));
         assert_eq!(
             entry(Opens::File, Some("--studio")).exec(&launcher),
-            "\"/home/someone/My Apps/Quadra.AppImage\" --studio %f"
+            "\"/home/someone/My Apps/Tiltframe.AppImage\" --studio %f"
         );
     }
 
     #[test]
     fn flatpak_entries_forward_opened_files() {
         let launcher = Launcher::Flatpak {
-            app_id: "org.quadrahq.Quadra".to_owned(),
+            app_id: "io.github.dissering.Tiltframe".to_owned(),
         };
         assert_eq!(
             entry(Opens::File, Some("--studio")).exec(&launcher),
-            "flatpak run --file-forwarding org.quadrahq.Quadra --studio @@ %f @@"
+            "flatpak run --file-forwarding io.github.dissering.Tiltframe --studio @@ %f @@"
         );
         assert_eq!(
             entry(Opens::Nothing, None).exec(&launcher),
-            "flatpak run org.quadrahq.Quadra"
+            "flatpak run io.github.dissering.Tiltframe"
         );
     }
 }

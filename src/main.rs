@@ -13,13 +13,21 @@ use state::{AppState, Theme};
 use std::cell::OnceCell;
 use std::rc::Rc;
 
-const APP_ID: &str = "org.quadrahq.Quadra";
+const APP_ID: &str = "io.github.dissering.Tiltframe";
 
 fn main() -> glib::ExitCode {
-    if let Some(exit_code) = command_line::run_report_if_requested() {
+    let args = match command_line::normalized_arguments(std::env::args().collect()) {
+        Ok(args) => args,
+        Err(error) => {
+            eprintln!("{error}");
+            return glib::ExitCode::FAILURE;
+        }
+    };
+    if let Some(exit_code) = command_line::run_report_if_requested(&args) {
         return exit_code;
     }
 
+    glib::set_application_name("Malus");
     let app = Application::builder()
         .application_id(APP_ID)
         .flags(gio::ApplicationFlags::HANDLES_COMMAND_LINE)
@@ -46,14 +54,22 @@ fn main() -> glib::ExitCode {
     app.connect_command_line(glib::clone!(
         #[strong]
         quadra,
-        move |_, command_line| {
-            if let Some(quadra) = quadra.get() {
-                match command_line::launch_requested_by(command_line) {
-                    Some(request) => quadra.launch_directly(request),
-                    None => quadra.activate(),
+        move |app, command_line| {
+            let Some(quadra) = quadra.get() else {
+                return glib::ExitCode::FAILURE;
+            };
+            match command_line::requested_by(command_line)
+                .and_then(|command| quadra.run_command(command))
+            {
+                Ok(()) => glib::ExitCode::SUCCESS,
+                Err(error) => {
+                    command_line::report_failure(command_line, &error);
+                    if !command_line.is_remote() {
+                        app.quit();
+                    }
+                    glib::ExitCode::FAILURE
                 }
             }
-            glib::ExitCode::SUCCESS
         }
     ));
 
@@ -63,13 +79,18 @@ fn main() -> glib::ExitCode {
         }
     });
 
-    app.run()
+    app.run_with_args(&args)
 }
 
 fn follow_theme(state: &AppState) {
     utils::register_bundled_fonts();
 
     let display = gtk::gdk::Display::default().unwrap();
+    gio::resources_register_include!("malus-icons.gresource").expect("load Malus icons");
+    let icons = gtk::IconTheme::for_display(&display);
+    icons.add_resource_path("/io/github/dissering/Malus/icons");
+    icons.add_search_path(glib::user_data_dir().join("icons"));
+    gtk::Window::set_default_icon_name(APP_ID);
     let theme = gtk::CssProvider::new();
     gtk::style_context_add_provider_for_display(
         &display,
@@ -80,7 +101,9 @@ fn follow_theme(state: &AppState) {
     let header = gtk::CssProvider::new();
     header.load_from_string(
         ".app-header { padding-left: 0px; }
-         .app-header .app-icon { margin-left: 8px; }",
+         .app-header .app-icon { margin-left: 12px; }
+         .home-card { padding: 26px 28px 24px; border-radius: 22px; }
+         .home-card .title-1 { margin-top: 2px; }",
     );
     gtk::style_context_add_provider_for_display(
         &display,

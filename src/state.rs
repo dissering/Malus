@@ -15,7 +15,9 @@ pub use fast_flags::{FastFlagValue, FastFlags};
 pub use launch_mode::LaunchMode;
 pub use mods::{CursorStyle, DeathSound};
 pub use regions::{Region, Regions, country_and_city_of};
-pub use rosemary_options::{CommandKey, PresentationMode, Renderer, SwapInterval, TitleBar};
+pub use rosemary_options::{
+    CommandKey, PresentationMode, Renderer, SwapInterval, TitleBar, WindowSize,
+};
 pub use server_history::{JoinedServer, PlayedGame, ServerHistory};
 
 use std::error::Error;
@@ -34,15 +36,24 @@ use serde::{Deserialize, Serialize};
 pub const USE_MONITOR_REFRESH_RATE: u32 = 0;
 pub const DEFAULT_VR_RENDER_SCALE: u32 = 70;
 pub const VR_RENDER_SCALE_RANGE: RangeInclusive<u32> = 40..=150;
-pub const QUADRA_RUNNER: &str = "Quadra";
-pub const QUADRA_PREFIX: &str = "Quadra";
+pub const LOG_TAIL_LIMIT: usize = 1024 * 1024;
+pub const LOG_TAIL_TARGET: usize = 768 * 1024;
+
+pub const QUADRA_RUNNER: &str = "Malus";
+pub const QUADRA_PREFIX: &str = "Malus";
 pub const ROSEMARY_DEFAULT_PREFIX: &str = "Rosemary default";
 
 const SAVE_DELAY_AFTER_LAST_CHANGE: Duration = Duration::from_millis(500);
-const SAVED_PROPERTIES: [&str; 42] = [
+const SAVED_PROPERTIES: [&str; 49] = [
     "launch-mode",
     "run-in-background",
     "discord-rich-presence",
+    "allow-game-presence",
+    "discord-details-text",
+    "discord-state-text",
+    "discord-show-elapsed",
+    "discord-show-game-page",
+    "window-size",
     "runtime",
     "runner",
     "custom-runner-path",
@@ -72,6 +83,7 @@ const SAVED_PROPERTIES: [&str; 42] = [
     "custom-cursor",
     "custom-font",
     "custom-mods",
+    "disabled-mod-packs",
     "hide-launcher-while-playing",
     "open-after-exit",
     "show-playtime",
@@ -136,6 +148,14 @@ struct SavedSettings {
     launch_mode: LaunchMode,
     run_in_background: bool,
     discord_rich_presence: bool,
+    allow_game_presence: bool,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    discord_details_text: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    discord_state_text: String,
+    discord_show_elapsed: bool,
+    discord_show_game_page: bool,
+    window_size: WindowSize,
     runtime: Runtime,
     runner: String,
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -175,6 +195,8 @@ struct SavedSettings {
     #[serde(skip_serializing_if = "String::is_empty")]
     custom_font: String,
     custom_mods: bool,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    disabled_mod_packs: Vec<String>,
     hide_launcher_while_playing: bool,
     open_after_exit: bool,
     show_playtime: bool,
@@ -193,6 +215,12 @@ impl Default for SavedSettings {
             launch_mode: LaunchMode::default(),
             run_in_background: false,
             discord_rich_presence: false,
+            allow_game_presence: true,
+            discord_details_text: String::new(),
+            discord_state_text: String::new(),
+            discord_show_elapsed: true,
+            discord_show_game_page: true,
+            window_size: WindowSize::default(),
             runtime: Runtime::default(),
             runner: QUADRA_RUNNER.to_owned(),
             custom_runner_path: String::new(),
@@ -207,7 +235,7 @@ impl Default for SavedSettings {
             show_menu_bar: true,
             command_key: CommandKey::default(),
             ctrl_for_edit_shortcuts: false,
-            plain_ctrl_click: true,
+            plain_ctrl_click: false,
             opened_before: false,
             environment_variables: EnvironmentVariables::default(),
             launch_wrapper: String::new(),
@@ -224,6 +252,7 @@ impl Default for SavedSettings {
             custom_cursor: String::new(),
             custom_font: String::new(),
             custom_mods: true,
+            disabled_mod_packs: Vec::new(),
             hide_launcher_while_playing: false,
             open_after_exit: false,
             show_playtime: true,
@@ -266,6 +295,18 @@ mod imp {
         run_in_background: Cell<bool>,
         #[property(get, set)]
         discord_rich_presence: Cell<bool>,
+        #[property(get, set)]
+        allow_game_presence: Cell<bool>,
+        #[property(get, set)]
+        discord_details_text: RefCell<String>,
+        #[property(get, set)]
+        discord_state_text: RefCell<String>,
+        #[property(get, set)]
+        discord_show_elapsed: Cell<bool>,
+        #[property(get, set)]
+        discord_show_game_page: Cell<bool>,
+        #[property(get, set, builder(WindowSize::default()))]
+        window_size: Cell<WindowSize>,
         #[property(get, set, builder(Runtime::default()))]
         runtime: Cell<Runtime>,
         #[property(get, set)]
@@ -339,6 +380,8 @@ mod imp {
         #[property(get, set)]
         custom_mods: Cell<bool>,
         #[property(get, set)]
+        disabled_mod_packs: RefCell<Vec<String>>,
+        #[property(get, set)]
         hide_launcher_while_playing: Cell<bool>,
         #[property(get, set)]
         open_after_exit: Cell<bool>,
@@ -358,10 +401,6 @@ mod imp {
         force_raknet: Cell<bool>,
         #[property(get, set)]
         advanced_settings_visible: Cell<bool>,
-        #[property(get, set)]
-        available_update: RefCell<String>,
-        #[property(get, set)]
-        update_status: RefCell<String>,
         #[property(get, set)]
         vr_status: RefCell<String>,
         #[property(get, set)]
@@ -444,6 +483,12 @@ impl AppState {
             .property("launch-mode", settings.launch_mode)
             .property("run-in-background", settings.run_in_background)
             .property("discord-rich-presence", settings.discord_rich_presence)
+            .property("allow-game-presence", settings.allow_game_presence)
+            .property("discord-details-text", settings.discord_details_text)
+            .property("discord-state-text", settings.discord_state_text)
+            .property("discord-show-elapsed", settings.discord_show_elapsed)
+            .property("discord-show-game-page", settings.discord_show_game_page)
+            .property("window-size", settings.window_size)
             .property("runtime", settings.runtime)
             .property("runner", settings.runner)
             .property("custom-runner-path", settings.custom_runner_path)
@@ -483,6 +528,7 @@ impl AppState {
             .property("custom-cursor", settings.custom_cursor)
             .property("custom-font", settings.custom_font)
             .property("custom-mods", settings.custom_mods)
+            .property("disabled-mod-packs", settings.disabled_mod_packs)
             .property(
                 "hide-launcher-while-playing",
                 settings.hide_launcher_while_playing,
@@ -553,7 +599,7 @@ impl AppState {
     }
 
     pub fn append_log(&self, text: &str) {
-        self.imp().log.borrow_mut().push_str(text);
+        append_log_tail(&mut self.imp().log.borrow_mut(), text);
         self.emit_by_name::<()>(LOG_APPENDED, &[&text]);
     }
 
@@ -663,6 +709,12 @@ impl AppState {
             launch_mode: self.launch_mode(),
             run_in_background: self.run_in_background(),
             discord_rich_presence: self.discord_rich_presence(),
+            allow_game_presence: self.allow_game_presence(),
+            discord_details_text: self.discord_details_text(),
+            discord_state_text: self.discord_state_text(),
+            discord_show_elapsed: self.discord_show_elapsed(),
+            discord_show_game_page: self.discord_show_game_page(),
+            window_size: self.window_size(),
             runtime: self.runtime(),
             runner: self.runner(),
             custom_runner_path: self.custom_runner_path(),
@@ -694,6 +746,7 @@ impl AppState {
             custom_cursor: self.custom_cursor(),
             custom_font: self.custom_font(),
             custom_mods: self.custom_mods(),
+            disabled_mod_packs: self.disabled_mod_packs(),
             hide_launcher_while_playing: self.hide_launcher_while_playing(),
             open_after_exit: self.open_after_exit(),
             show_playtime: self.show_playtime(),
@@ -716,7 +769,9 @@ impl AppState {
 }
 
 pub fn settings_path() -> PathBuf {
-    glib::user_config_dir().join("quadra").join("config.toml")
+    glib::user_config_dir()
+        .join("tiltframe")
+        .join("config.toml")
 }
 
 enum SettingsProblem {
@@ -728,7 +783,7 @@ fn parse_settings(contents: &str) -> (SavedSettings, Option<SettingsProblem>) {
     let Ok(table) = toml::from_str::<toml::Table>(contents) else {
         return (SavedSettings::default(), Some(SettingsProblem::Unparsable));
     };
-    let table = hidden_title_bar_as_hidden_menu_bar(table);
+    let table = migrate_settings_names(hidden_title_bar_as_hidden_menu_bar(table));
     if let Ok(settings) = table.clone().try_into::<SavedSettings>() {
         return (settings, None);
     }
@@ -742,6 +797,15 @@ fn parse_settings(contents: &str) -> (SavedSettings, Option<SettingsProblem>) {
     let settings = readable.try_into().unwrap_or_default();
     let names = unreadable.keys().cloned().collect();
     (settings, Some(SettingsProblem::InvalidValues(names)))
+}
+
+fn migrate_settings_names(mut table: toml::Table) -> toml::Table {
+    for (key, name) in [("runner", QUADRA_RUNNER), ("prefix", QUADRA_PREFIX)] {
+        if table.get(key).and_then(toml::Value::as_str) == Some("Tiltframe") {
+            table.insert(key.to_owned(), name.into());
+        }
+    }
+    table
 }
 
 fn hidden_title_bar_as_hidden_menu_bar(mut table: toml::Table) -> toml::Table {
@@ -765,11 +829,11 @@ impl SettingsProblem {
     fn explanation(&self, kept_copy: Option<&Path>) -> String {
         let what_happened = match self {
             Self::Unparsable => {
-                "Quadra couldn't read your settings file, so every setting is back to its default."
+                "Malus couldn't read your settings file, so every setting is back to its default."
                     .to_owned()
             }
             Self::InvalidValues(names) => format!(
-                "Some of your settings had values Quadra doesn't understand, so they're back to their defaults: {}.",
+                "Some of your settings had values Malus doesn't understand, so they're back to their defaults: {}.",
                 names.join(", ")
             ),
         };
@@ -815,7 +879,7 @@ fn read_saved_settings() -> LoadedSettings {
                 settings: SavedSettings::default(),
                 file_existed: true,
                 problem: Some(format!(
-                    "Quadra couldn't open your settings file at {} ({error}), so it's using the default settings for now.",
+                    "Malus couldn't open your settings file at {} ({error}), so it's using the default settings for now.",
                     path.display()
                 )),
                 save_repaired_settings: false,
@@ -849,8 +913,42 @@ fn write_saved_settings(settings: &SavedSettings) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
+fn append_log_tail(log: &mut String, text: &str) {
+    if text.len() >= LOG_TAIL_LIMIT {
+        log.clear();
+        log.push_str(&text[text.ceil_char_boundary(text.len() - LOG_TAIL_TARGET)..]);
+        return;
+    }
+    log.push_str(text);
+    if log.len() > LOG_TAIL_LIMIT {
+        let start = log.ceil_char_boundary(log.len() - LOG_TAIL_TARGET);
+        log.drain(..start);
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn migrates_the_old_built_in_runner_and_prefix_names() {
+        use super::{QUADRA_PREFIX, QUADRA_RUNNER, parse_settings};
+        let (settings, problem) = parse_settings("runner = \"Tiltframe\"\nprefix = \"Tiltframe\"");
+        assert!(problem.is_none());
+        assert_eq!(settings.runner, QUADRA_RUNNER);
+        assert_eq!(settings.prefix, QUADRA_PREFIX);
+    }
+
+    #[test]
+    fn log_tail_keeps_recent_utf8_when_a_batch_or_history_reaches_the_limit() {
+        use super::{LOG_TAIL_LIMIT, LOG_TAIL_TARGET, append_log_tail};
+        let mut log = String::new();
+        let output = "🚀".repeat(LOG_TAIL_LIMIT / 4);
+        append_log_tail(&mut log, &output);
+        assert_eq!(log.len(), LOG_TAIL_TARGET);
+        append_log_tail(&mut log, &"x".repeat(LOG_TAIL_LIMIT - LOG_TAIL_TARGET + 1));
+        assert!(log.len() <= LOG_TAIL_TARGET);
+        assert!(log.ends_with('x'));
+    }
+
     use super::*;
 
     #[test]

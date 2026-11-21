@@ -64,7 +64,7 @@ impl ksni::Tray for QuadraTray {
     }
 
     fn title(&self) -> String {
-        "Quadra".to_owned()
+        "Malus".to_owned()
     }
 
     fn icon_pixmap(&self) -> Vec<ksni::Icon> {
@@ -73,7 +73,7 @@ impl ksni::Tray for QuadraTray {
 
     fn tool_tip(&self) -> ksni::ToolTip {
         ksni::ToolTip {
-            title: "Quadra".to_owned(),
+            title: "Malus".to_owned(),
             description: self.status.description.clone(),
             ..Default::default()
         }
@@ -94,7 +94,7 @@ impl ksni::Tray for QuadraTray {
         vec![
             play_action.into(),
             MenuItem::Separator,
-            Self::menu_item("Open Quadra", TrayRequest::OpenHome),
+            Self::menu_item("Open Malus", TrayRequest::OpenHome),
             Self::menu_item("Settings", TrayRequest::OpenSettings),
             MenuItem::Separator,
             Self::menu_item("Quit", TrayRequest::Quit),

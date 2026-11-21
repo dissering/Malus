@@ -7,25 +7,30 @@ use crate::state::{AppState, Client};
 use adw::prelude::*;
 
 pub fn client_page(state: &AppState, client: Client) -> gtk::Widget {
-    let logo = app_icon(128);
+    let logo = app_icon(72);
 
     let title = gtk::Label::builder()
-        .label(client.home_title())
+        .label(client.name())
         .css_classes(["title-1"])
         .build();
 
     let subtitle = status_label(state, client);
 
-    let logs_button = logs_button(state);
-
-    let play_button = play_button(state, client);
+    let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    actions.set_halign(gtk::Align::Center);
+    actions.set_margin_top(10);
+    actions.append(&play_button(state, client));
+    actions.append(&logs_button(state));
 
     let content = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
-        .spacing(12)
-        .halign(gtk::Align::Center)
-        .valign(gtk::Align::Center)
-        .vexpand(true)
+        .spacing(9)
+        .width_request(290)
+        .margin_top(16)
+        .margin_bottom(24)
+        .margin_start(16)
+        .margin_end(16)
+        .css_classes(["card", "home-card"])
         .build();
     content.append(&logo);
     content.append(&title);
@@ -33,8 +38,14 @@ pub fn client_page(state: &AppState, client: Client) -> gtk::Widget {
     if client == Client::Player {
         content.append(&playtime_label(state));
     }
-    content.append(&logs_button);
-    content.append(&play_button);
+    content.append(&actions);
 
-    content.upcast()
+    let page = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .halign(gtk::Align::Center)
+        .valign(gtk::Align::Center)
+        .vexpand(true)
+        .build();
+    page.append(&content);
+    page.upcast()
 }

@@ -3,7 +3,7 @@ use super::controller_access::controller_access_row;
 use super::mangohud::mangohud_row;
 use crate::state::{
     AppState, CommandKey, PresentationMode, Renderer, SwapInterval, TitleBar,
-    USE_MONITOR_REFRESH_RATE,
+    USE_MONITOR_REFRESH_RATE, WindowSize,
 };
 use adw::prelude::*;
 
@@ -66,6 +66,9 @@ fn renderer_subtitle(vr: bool) -> &'static str {
 }
 
 pub fn input_group(state: &AppState) -> adw::PreferencesGroup {
+    let size = choice_row::<WindowSize>(state, "window-size", "Roblox window size");
+    size.set_subtitle("Initial size for new Player windows. Applies on the next launch.");
+
     let title_bar_row = choice_row::<TitleBar>(state, "title-bar", "Title bar");
     title_bar_row.set_subtitle("Mac-style shows Roblox's menus inside the title bar.");
 
@@ -99,6 +102,7 @@ pub fn input_group(state: &AppState) -> adw::PreferencesGroup {
         .title("Input &amp; windows")
         .description("Rosemary options for the keyboard, mouse and window.")
         .build();
+    group.add(&size);
     group.add(&title_bar_row);
     group.add(&menu_bar_row);
     group.add(&command_key_row);

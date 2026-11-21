@@ -8,7 +8,7 @@ const HOST_OS_DIRECTORIES: [&str; 4] = ["/usr", "/lib", "/lib64", "/etc/alternat
 const LONGEST_LINK_CHAIN: usize = 16;
 
 pub fn quadra_data_directory() -> PathBuf {
-    glib::user_data_dir().join("quadra")
+    glib::user_data_dir().join("tiltframe")
 }
 
 pub fn quadra_rosemary_versions_directory() -> PathBuf {
@@ -80,7 +80,7 @@ pub fn resolved_on_host_os(path: &Path) -> Option<PathBuf> {
 pub fn desktop_entry_icon_file() -> PathBuf {
     quadra_data_directory()
         .join("icons")
-        .join("org.quadrahq.Quadra.png")
+        .join("io.github.dissering.Tiltframe.png")
 }
 
 pub fn fast_flags_file() -> PathBuf {
@@ -94,7 +94,7 @@ pub fn logs_directory() -> PathBuf {
 }
 
 pub fn downloads_directory() -> PathBuf {
-    glib::user_cache_dir().join("quadra").join("downloads")
+    glib::user_cache_dir().join("tiltframe").join("downloads")
 }
 
 pub fn butter_runner_directories() -> [PathBuf; 2] {
@@ -106,18 +106,18 @@ pub fn butter_runner_directories() -> [PathBuf; 2] {
 
 pub fn server_history_file() -> PathBuf {
     glib::user_config_dir()
-        .join("quadra")
+        .join("tiltframe")
         .join("server-history.json")
 }
 
 pub fn regions_cache_file() -> PathBuf {
     glib::user_cache_dir()
-        .join("quadra")
+        .join("tiltframe")
         .join("rovalra-regions.json")
 }
 
 pub fn vr_directory() -> PathBuf {
-    glib::user_cache_dir().join("quadra").join("vr")
+    glib::user_cache_dir().join("tiltframe").join("vr")
 }
 
 pub fn mods_directory() -> PathBuf {
@@ -130,12 +130,12 @@ pub fn mods_backup_directory() -> PathBuf {
 
 pub fn mod_guard_file() -> PathBuf {
     glib::user_config_dir()
-        .join("quadra")
+        .join("tiltframe")
         .join("mod-guard.json")
 }
 
 pub fn fast_flag_allowlist_file() -> PathBuf {
     glib::user_cache_dir()
-        .join("quadra")
+        .join("tiltframe")
         .join("fast-flag-allowlist.json")
 }

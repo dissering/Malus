@@ -202,13 +202,13 @@ pub fn status(rosemary: Option<&Path>) -> String {
 fn check_requirements(rosemary: &Path) -> Result<OpenXrRuntime, String> {
     if VR_LIBRARY.is_empty() {
         return Err(
-            "This build of Quadra has no VR library. It's built when clang and lld are installed."
+            "This build of Malus has no VR library. It's built when clang and lld are installed."
                 .to_owned(),
         );
     }
     if !rosemary_supports_vr(rosemary) {
         return Err(
-            "The selected Rosemary can't load VR. Choose Quadra's Rosemary under Runtime."
+            "The selected Rosemary can't load VR. Choose Malus's Rosemary under Runtime."
                 .to_owned(),
         );
     }

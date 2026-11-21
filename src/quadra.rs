@@ -1,19 +1,21 @@
-use crate::backend::{self, LaunchRequest};
+use crate::backend::{self, LaunchRequest, launch_profiles};
+use crate::command_line::Command;
 use crate::components::close_roblox_dialog::confirm_closing_roblox;
 use crate::components::error_dialog::show_errors_from;
 use crate::components::grid_backdrop::grid_backdrop;
 use crate::components::header::bar;
 use crate::components::launch_window::launch_window;
 use crate::components::line_field_backdrop::line_field_backdrop;
+use crate::components::logs_dialog::logs_dialog;
 use crate::components::play_action::PlayAction;
 use crate::components::tray::{TrayIcon, TrayRequest};
-use crate::components::update_banner::update_banner;
 use crate::pages::home::home_page;
 use crate::pages::servers::servers_page;
 use crate::pages::settings::settings_page;
 use crate::state::{AppState, LaunchMode};
 use crate::utils::show_only_while_roblox_is_selected;
 use adw::{Application, ApplicationWindow, ToolbarView, ViewStack, prelude::*};
+use anyhow::Context;
 use gtk::glib;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -115,6 +117,35 @@ impl Quadra {
         }
     }
 
+    pub fn run_command(&self, command: Command) -> anyhow::Result<()> {
+        match command {
+            Command::Launch { request, profile } => {
+                if let Some(profile) = profile {
+                    launch_profiles::apply(&profile, &self.state)?;
+                }
+                self.launch_directly(request);
+            }
+            Command::Rejoin => {
+                let history = self.state.server_history();
+                let link = history
+                    .0
+                    .iter()
+                    .find_map(|game| {
+                        game.servers
+                            .first()
+                            .map(|server| backend::game_uri(game.place_id, Some(&server.job_id)))
+                    })
+                    .context("No recent Roblox server yet. Join an experience first.")?;
+                self.launch_directly(LaunchRequest::Roblox { link: Some(link) });
+            }
+            Command::Activate => self.activate(),
+            Command::Menu => self.open_menu(),
+            Command::Settings => self.open_settings(),
+            Command::Logs => self.open_logs(),
+        }
+        Ok(())
+    }
+
     pub fn launch_directly(&self, request: LaunchRequest) {
         if self.state.running() || self.state.busy() {
             self.show(Page::Home);
@@ -129,6 +160,19 @@ impl Quadra {
         }
     }
 
+    pub fn open_menu(&self) {
+        self.show(Page::Home);
+    }
+
+    pub fn open_settings(&self) {
+        self.show(Page::Settings);
+    }
+
+    pub fn open_logs(&self) {
+        self.open_menu();
+        logs_dialog(&self.state).present(Some(&self.window));
+    }
+
     fn show(&self, page: Page) {
         self.launched_directly.set(false);
         self.pages.set_visible_child_name(page.name());
@@ -137,8 +181,8 @@ impl Quadra {
 
     fn handle(self: &Rc<Self>, request: TrayRequest) {
         match request {
-            TrayRequest::OpenHome => self.show(Page::Home),
-            TrayRequest::OpenSettings => self.show(Page::Settings),
+            TrayRequest::OpenHome => self.open_menu(),
+            TrayRequest::OpenSettings => self.open_settings(),
             TrayRequest::PerformPlayAction => {
                 let action = PlayAction::for_client(&self.state, self.state.current_client());
                 if action.is_available(&self.state) {
@@ -247,20 +291,20 @@ fn pages(state: &AppState) -> ViewStack {
         &home_page(state),
         Some(Page::Home.name()),
         "Home",
-        "go-home-symbolic",
+        "malus-house-symbolic",
     );
     let servers = pages.add_titled_with_icon(
         &servers_page(state),
         Some(Page::Servers.name()),
-        "Servers",
-        "network-server-symbolic",
+        "Library",
+        "malus-server-symbolic",
     );
     show_only_while_roblox_is_selected(&servers, state);
     pages.add_titled_with_icon(
         &settings_page(state),
         Some(Page::Settings.name()),
         "Settings",
-        "emblem-system-symbolic",
+        "malus-settings-symbolic",
     );
 
     pages
@@ -269,7 +313,6 @@ fn pages(state: &AppState) -> ViewStack {
 fn window(app: &Application, state: &AppState, pages: &ViewStack) -> ApplicationWindow {
     let toolbar_view = ToolbarView::new();
     toolbar_view.add_top_bar(&bar(pages));
-    toolbar_view.add_top_bar(&update_banner(state));
     toolbar_view.set_content(Some(pages));
 
     let backdrop = gtk::Overlay::builder().child(&grid_backdrop(state)).build();
@@ -279,7 +322,7 @@ fn window(app: &Application, state: &AppState, pages: &ViewStack) -> Application
 
     let window = ApplicationWindow::builder()
         .application(app)
-        .title("Quadra")
+        .title("Malus")
         .default_width(800)
         .default_height(600)
         .hide_on_close(true)

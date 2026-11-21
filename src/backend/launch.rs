@@ -12,13 +12,10 @@ use crate::state::{
 use crate::utils::{find_in_path, is_executable_file};
 use anyhow::Context;
 use gtk::glib;
-use nix::sys::prctl::set_pdeathsig;
-use nix::sys::signal::{Signal, killpg, raise};
-use nix::unistd::{Pid, getppid};
 use std::cell::RefCell;
 use std::ffi::OsString;
 use std::fs::{self, File};
-use std::io::Write;
+use std::io::{self, Write};
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -65,6 +62,9 @@ pub fn start_roblox(
         command.args([PROTOCOL_STRING_ARGUMENT, launch_uri]);
     }
     command.envs(rosemary_environment(state, vr_session));
+    if let Some(size) = state.window_size().resolution() {
+        command.env("ROSEMARY_WINDOW_SIZE", size);
+    }
 
     run(state, Client::Player, runner, command, vr.map(vr_log_line))
 }
@@ -151,7 +151,7 @@ fn report_mods_set_aside(state: &AppState, crashed: bool) {
     let set_aside = mods::finish_session(crashed);
     if !set_aside.is_empty() {
         state.report_error(&format!(
-            "Roblox crashed soon after starting with new mods, so Quadra set them aside: {}. \
+            "Roblox crashed soon after starting with new mods, so Malus set them aside: {}. \
              You can turn them back on in Settings.",
             set_aside.join(", ")
         ));
@@ -165,10 +165,10 @@ pub fn stop_roblox() {
         };
 
         let process_group = running_roblox.process_group;
-        signal_process_group(process_group, Signal::SIGTERM);
+        signal_process_group(process_group, libc::SIGTERM);
         glib::timeout_add_local_once(FORCE_STOP_DELAY, move || {
             if is_still_running(process_group) {
-                signal_process_group(process_group, Signal::SIGKILL);
+                signal_process_group(process_group, libc::SIGKILL);
             }
         });
 
@@ -195,8 +195,10 @@ fn is_still_running(process_group: i32) -> bool {
     })
 }
 
-fn signal_process_group(process_group: i32, signal: Signal) {
-    let _ = killpg(Pid::from_raw(process_group), signal);
+fn signal_process_group(process_group: i32, signal: libc::c_int) {
+    unsafe {
+        libc::kill(-process_group, signal);
+    }
 }
 
 pub fn launch_wrapper_problem(wrapper: &str) -> Option<String> {
@@ -235,14 +237,14 @@ fn launch_wrapper_words(wrapper: &str) -> anyhow::Result<Vec<String>> {
 }
 
 fn end_when_quadra_ends(command: &mut Command) {
-    let quadra = Pid::from_raw(std::process::id() as i32);
-
+    let quadra = std::process::id() as libc::pid_t;
     unsafe {
         command.pre_exec(move || {
-            set_pdeathsig(Signal::SIGTERM)?;
-
-            if getppid() != quadra {
-                _ = raise(Signal::SIGTERM);
+            if libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGTERM as libc::c_ulong) == -1 {
+                return Err(io::Error::last_os_error());
+            }
+            if libc::getppid() != quadra {
+                libc::raise(libc::SIGTERM);
             }
             Ok(())
         });

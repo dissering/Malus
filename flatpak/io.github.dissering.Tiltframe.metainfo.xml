@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.dissering.Tiltframe</id>
+  <name>Malus</name>
+  <summary>Launch Roblox on Linux with Rosemary</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <description>
+    <p>Malus is an independent fork of Quadra. It runs the macOS Roblox Player and Studio on Linux through Rosemary.</p>
+    <p>Search and edit Roblox Player FastFlags, apply a texture preset, and share overrides as JSON.</p>
+  </description>
+  <launchable type="desktop-id">io.github.dissering.Tiltframe.desktop</launchable>
+  <url type="homepage">https://github.com/dissering/Malus</url>
+  <url type="bugtracker">https://github.com/dissering/Malus/issues</url>
+  <branding>
+    <color type="primary" scheme_preference="light">#b6fff1</color>
+    <color type="primary" scheme_preference="dark">#102328</color>
+  </branding>
+  <releases>
+    <release version="0.1.0" date="2026-11-20"/>
+  </releases>
+</component>

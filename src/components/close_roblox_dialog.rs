@@ -6,7 +6,7 @@ const CLOSE_RESPONSE: &str = "close";
 pub fn confirm_closing_roblox(parent: &impl IsA<gtk::Widget>, on_confirmed: impl Fn() + 'static) {
     let dialog = adw::AlertDialog::builder()
         .heading("Close Roblox too?")
-        .body("Roblox is still running. Quitting Quadra closes Roblox as well.")
+        .body("Roblox is still running. Quitting Malus closes Roblox as well.")
         .build();
     dialog.add_response(KEEP_PLAYING_RESPONSE, "Keep playing");
     dialog.add_response(CLOSE_RESPONSE, "Close Roblox");

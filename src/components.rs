@@ -12,4 +12,3 @@ pub mod logs_dialog;
 pub mod play_action;
 pub mod roblox_status;
 pub mod tray;
-pub mod update_banner;

@@ -17,7 +17,7 @@ pub fn integration_section(state: &AppState) -> gtk::Box {
 
     let handlers_group = adw::PreferencesGroup::builder()
         .title("Links and files")
-        .description("Makes Quadra the app your system uses for these.")
+        .description("Choose which links and files open in Malus.")
         .build();
     for handler in Handler::ALL {
         handlers_group.add(&handler_row(state, handler));

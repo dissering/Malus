@@ -76,9 +76,9 @@ impl PlayAction {
 
     pub fn icon_name(self) -> &'static str {
         match self {
-            Self::Install(_) => "folder-download-symbolic",
-            Self::Play(_) | Self::Opening => "media-playback-start-symbolic",
-            Self::Stop | Self::Stopping => "media-playback-stop-symbolic",
+            Self::Install(_) => "malus-download-symbolic",
+            Self::Play(_) | Self::Opening => "malus-play-symbolic",
+            Self::Stop | Self::Stopping => "malus-square-symbolic",
         }
     }
 

@@ -53,7 +53,7 @@ pub fn support_group(state: &AppState) -> adw::PreferencesGroup {
         .sync_create()
         .build();
 
-    let about_row = adw::ButtonRow::builder().title("About Quadra").build();
+    let about_row = adw::ButtonRow::builder().title("About Malus").build();
     about_row.connect_activated(show_about);
 
     let group = adw::PreferencesGroup::builder().title("Support").build();

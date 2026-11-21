@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Quadra
+Name=Malus
 Comment=Run Roblox on Linux
-Exec=quadra %u
-Icon=org.quadrahq.Quadra
+Exec=malus %u
+Icon=io.github.dissering.Tiltframe
 Keywords=roblox;game;gaming;social;experience;launcher;
 Categories=GNOME;GTK;Game;
 MimeType=x-scheme-handler/roblox;x-scheme-handler/roblox-player;x-scheme-handler/roblox-studio;x-scheme-handler/roblox-studio-auth;application/x-roblox-rbxl;application/x-roblox-rbxlx;
@@ -13,8 +13,8 @@ Actions=roblox;studio;
 
 [Desktop Action roblox]
 Name=Roblox
-Exec=quadra --roblox
+Exec=malus --roblox
 
 [Desktop Action studio]
 Name=Roblox Studio
-Exec=quadra --studio
+Exec=malus --studio

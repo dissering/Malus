@@ -218,7 +218,11 @@ fn image_update(data: ImageData) -> ImageUpdate {
 
 fn asset_id_in(value: Value) -> Option<u64> {
     match value {
-        Value::Number(number) => number.as_f64().map(|asset_id| asset_id as u64),
+        Value::Number(number) => number.as_u64().or_else(|| {
+            const MAX_EXACT_FLOAT_ID: f64 = (1u64 << f64::MANTISSA_DIGITS) as f64 - 1.0;
+            let id = number.as_f64()?;
+            ((1.0..=MAX_EXACT_FLOAT_ID).contains(&id) && id.fract() == 0.0).then_some(id as u64)
+        }),
         Value::String(text) => text
             .strip_prefix(ASSET_ID_PREFIX)
             .unwrap_or(&text)
@@ -226,11 +230,22 @@ fn asset_id_in(value: Value) -> Option<u64> {
             .ok(),
         _ => None,
     }
+    .filter(|id| *id > 0)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn keeps_exact_integer_asset_ids_and_rejects_invalid_numbers() {
+        let asset = |json| asset_id_in(serde_json::from_str::<Value>(json).unwrap());
+        assert_eq!(asset("9007199254740993"), Some(9007199254740993));
+        assert_eq!(asset("1.234e3"), Some(1234));
+        for invalid in ["-6", "1.5", "0", "1e30"] {
+            assert_eq!(asset(invalid), None);
+        }
+    }
 
     fn line(json: &str) -> String {
         format!(
@@ -254,7 +269,7 @@ mod tests {
             }),
             small_image: Some(Image {
                 url: "quadra".to_owned(),
-                text: "Quadra".to_owned(),
+                text: "Malus".to_owned(),
             }),
             link: None,
         }

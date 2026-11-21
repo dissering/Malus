@@ -21,7 +21,7 @@ pub fn sign_out(state: &AppState) {
         return;
     }
     let Some(prefix_directory) = prefix::directory_for(&state.prefix()) else {
-        state.report_error("Quadra can only sign out of its own prefix.");
+        state.report_error("Malus can only sign out of its own prefix.");
         return;
     };
 

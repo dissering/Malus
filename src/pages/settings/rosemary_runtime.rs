@@ -189,7 +189,7 @@ fn rosemary_install_row(state: &AppState) -> adw::ActionRow {
     let row = adw::ActionRow::builder()
         .title("Rosemary isn't installed")
         .subtitle(format!(
-            "Install Quadra's Rosemary {QUADRA_ROSEMARY_VERSION} to run Roblox."
+            "Install Malus's Rosemary {QUADRA_ROSEMARY_VERSION} to run Roblox."
         ))
         .build();
     row.add_suffix(&install_button);
@@ -283,7 +283,7 @@ fn quadra_rosemary_is_selected_but_missing(state: &AppState) -> bool {
 
 fn runner_description(state: &AppState) -> String {
     if quadra_rosemary_is_selected_but_missing(state) {
-        format!("Quadra's Rosemary {QUADRA_ROSEMARY_VERSION} will be installed when you play.")
+        format!("Malus's Rosemary {QUADRA_ROSEMARY_VERSION} will be installed when you play.")
     } else {
         "The Rosemary build that runs Roblox.".to_owned()
     }

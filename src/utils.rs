@@ -14,7 +14,7 @@ pub fn scrollable(child: &impl IsA<gtk::Widget>) -> gtk::ScrolledWindow {
 }
 
 pub const APP_ICON_PNG: &[u8] =
-    include_bytes!("../data/icons/hicolor/256x256/apps/org.quadrahq.Quadra.png");
+    include_bytes!("../data/icons/hicolor/256x256/apps/io.github.dissering.Tiltframe.png");
 
 const BUNDLED_FONTS: [(&str, &[u8]); 2] = [
     ("Archivo.ttf", include_bytes!("../assets/fonts/Archivo.ttf")),
@@ -26,7 +26,7 @@ const BUNDLED_FONTS: [(&str, &[u8]); 2] = [
 
 pub fn register_bundled_fonts() {
     let font_map = pangocairo::FontMap::default();
-    let fonts_directory = gtk::glib::user_cache_dir().join("quadra").join("fonts");
+    let fonts_directory = gtk::glib::user_cache_dir().join("tiltframe").join("fonts");
     for (name, contents) in BUNDLED_FONTS {
         let file = fonts_directory.join(name);
         if let Err(error) = register_font(&font_map, &file, contents) {

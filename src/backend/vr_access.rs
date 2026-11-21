@@ -52,7 +52,7 @@ fn without_access_mode(permission: &str) -> &str {
 mod tests {
     use super::*;
 
-    const FLATPAK_ID: &str = "org.quadrahq.Quadra";
+    const FLATPAK_ID: &str = "io.github.dissering.Tiltframe";
 
     fn sandbox_info_granting(filesystems: &str) -> String {
         format!(
@@ -73,7 +73,7 @@ mod tests {
                  --filesystem=xdg-run/wivrn:create \
                  --filesystem=xdg-data/flatpak/app/io.github.wivrn.wivrn:ro \
                  --filesystem=/var/lib/flatpak/app/io.github.wivrn.wivrn:ro \
-                 org.quadrahq.Quadra"
+                 io.github.dissering.Tiltframe"
                     .to_owned()
             )
         );
@@ -90,7 +90,7 @@ mod tests {
                 "flatpak override --user \
                  --filesystem=xdg-data/flatpak/app/io.github.wivrn.wivrn:ro \
                  --filesystem=/var/lib/flatpak/app/io.github.wivrn.wivrn:ro \
-                 org.quadrahq.Quadra"
+                 io.github.dissering.Tiltframe"
                     .to_owned()
             )
         );

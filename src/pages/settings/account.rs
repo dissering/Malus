@@ -49,7 +49,7 @@ fn show_account(row: &adw::ActionRow, sign_out_button: &gtk::Button, state: &App
 fn confirm_sign_out(button: &gtk::Button, state: &AppState) {
     let dialog = adw::AlertDialog::builder()
         .heading("Sign out of Roblox?")
-        .body("Quadra deletes the saved session. You'll sign in again the next time you play.")
+        .body("Malus deletes the saved session. You'll sign in again the next time you play.")
         .build();
     dialog.add_response(CANCEL_RESPONSE, "Cancel");
     dialog.add_response(SIGN_OUT_RESPONSE, "Sign out");
