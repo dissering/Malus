@@ -1,13 +1,5 @@
-<img src="https://raw.githubusercontent.com/dissering/Tiltframe/tiltframe/data/icons/hicolor/128x128/apps/io.github.dissering.Tiltframe.png" width="88" height="88" alt="Malus logo">
-
 # Malus
 
-A Linux launcher for the macOS Roblox Player and Studio, based on Quadra and powered by Rosemary. Malus includes a Lucide-based interface, a searchable FastFlags editor, command-line launch and join tools, and configurable Discord Rich Presence with BloxstrapRPC support.
+Roblox Player and Studio on Linux through Rosemary. Forked from [Quadra](https://github.com/QuadraHQ/Quadra).
 
-**Malus's source and installer are on the [`tiltframe` branch](https://github.com/dissering/Tiltframe/tree/tiltframe).** This branch carries the upstream Quadra source.
-
-- [Install Malus and configure FastFlags](https://github.com/dissering/Tiltframe/tree/tiltframe#install-on-linux)
-- [Command-line usage](https://github.com/dissering/Tiltframe/tree/tiltframe#command-line)
-- [Discord and BloxstrapRPC](https://github.com/dissering/Tiltframe/tree/tiltframe#discord-and-bloxstraprpc)
-- [Contribute to Malus](https://github.com/dissering/Tiltframe/tree/tiltframe/CONTRIBUTING.md)
-- [GPL-3.0-only license](https://github.com/dissering/Tiltframe/tree/tiltframe/LICENSE)
+The source and build instructions are on the [`tiltframe` branch](https://github.com/dissering/Malus/tree/tiltframe#install).
