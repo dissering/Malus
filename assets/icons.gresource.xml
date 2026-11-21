@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/io/github/dissering/Tiltframe/icons">
+    <file alias="scalable/actions/tiltframe-download-symbolic.svg">lucide/download.svg</file>
+    <file alias="scalable/actions/tiltframe-glasses-symbolic.svg">lucide/glasses.svg</file>
+    <file alias="scalable/actions/tiltframe-house-symbolic.svg">lucide/house.svg</file>
+    <file alias="scalable/actions/tiltframe-link-symbolic.svg">lucide/link.svg</file>
+    <file alias="scalable/actions/tiltframe-package-symbolic.svg">lucide/package.svg</file>
+    <file alias="scalable/actions/tiltframe-pencil-symbolic.svg">lucide/pencil.svg</file>
+    <file alias="scalable/actions/tiltframe-play-symbolic.svg">lucide/play.svg</file>
+    <file alias="scalable/actions/tiltframe-server-symbolic.svg">lucide/server.svg</file>
+    <file alias="scalable/actions/tiltframe-settings-symbolic.svg">lucide/settings.svg</file>
+    <file alias="scalable/actions/tiltframe-sliders-horizontal-symbolic.svg">lucide/sliders-horizontal.svg</file>
+    <file alias="scalable/actions/tiltframe-square-symbolic.svg">lucide/square.svg</file>
+    <file alias="scalable/actions/tiltframe-terminal-symbolic.svg">lucide/terminal.svg</file>
+    <file alias="scalable/actions/tiltframe-trash-symbolic.svg">lucide/trash.svg</file>
+    <file>lucide/LICENSE</file>
+  </gresource>
+</gresources>

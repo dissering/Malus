@@ -11,12 +11,13 @@ use std::rc::Rc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const DISCORD_CLIENT_ID: &str = "363445589247131668";
-const QUADRA_ICON_URL: &str = "https://raw.githubusercontent.com/dissering/Tiltframe/main/data/icons/hicolor/512x512/apps/io.github.dissering.Tiltframe.png";
+const QUADRA_ICON_URL: &str = "https://raw.githubusercontent.com/dissering/Tiltframe/tiltframe/data/icons/hicolor/512x512/apps/io.github.dissering.Tiltframe.png";
 const QUADRA_ICON_TEXT: &str = "Tiltframe";
 const REFRESH_GAME_DETAILS_EVERY: Duration = Duration::from_secs(60);
 const SHORTEST_TIME_BETWEEN_RPC_UPDATES: Duration = Duration::from_secs(1);
 const WAIT_FOR_JOIN_REPORT: Duration = Duration::from_secs(10);
-const PROPERTIES_THAT_DECIDE_PRESENCE: [&str; 2] = ["running", "discord-rich-presence"];
+const PROPERTIES_THAT_DECIDE_PRESENCE: [&str; 3] =
+    ["running", "discord-rich-presence", "allow-game-presence"];
 const SHORTEST_DISCORD_TEXT: usize = 2;
 const LONGEST_DISCORD_TEXT: usize = 128;
 const INVISIBLE_PADDING: char = '\u{2800}';
@@ -38,6 +39,8 @@ struct Presence {
     game: Option<CurrentGame>,
     shown_presence: Option<RichPresence>,
     last_rpc_update_at: Option<Instant>,
+    pending_overrides: Option<Overrides>,
+    flush_rpc: Option<glib::SourceId>,
     asset_urls: HashMap<u64, String>,
     requested_assets: HashSet<u64>,
 }
@@ -69,7 +72,11 @@ pub fn initialize(state: &AppState) {
     ));
 
     state.connect_properties_notify(&PROPERTIES_THAT_DECIDE_PRESENCE, move |state| {
+        if !state.allow_game_presence() {
+            clear_overrides(&mut presence.borrow_mut());
+        }
         follow_roblox(state, &presence);
+        fetch_missing_assets(state, &presence);
         show(state, &presence);
     });
 }
@@ -170,6 +177,7 @@ fn leave_game(presence: &SharedPresence) {
         let mut presence = presence.borrow_mut();
         presence.asset_urls.clear();
         presence.requested_assets.clear();
+        clear_overrides(&mut presence);
         presence.game.take()
     };
     if let Some(game) = left_game {
@@ -177,20 +185,65 @@ fn leave_game(presence: &SharedPresence) {
     }
 }
 
-fn update_presence(state: &AppState, presence: &SharedPresence, update: PresenceUpdate) {
-    {
-        let mut presence = presence.borrow_mut();
-        let now = Instant::now();
-        let is_too_soon = presence
-            .last_rpc_update_at
-            .is_some_and(|last| now.duration_since(last) <= SHORTEST_TIME_BETWEEN_RPC_UPDATES);
-        let Some(game) = presence.game.as_mut().filter(|_| !is_too_soon) else {
-            return;
-        };
-        game.overrides.apply(update);
-        presence.last_rpc_update_at = Some(now);
+fn clear_overrides(presence: &mut Presence) {
+    if let Some(timer) = presence.flush_rpc.take() {
+        timer.remove();
     }
-    fetch_missing_assets(state, presence);
+    presence.pending_overrides = None;
+    presence.last_rpc_update_at = None;
+    if let Some(game) = presence.game.as_mut() {
+        game.overrides = Overrides::default();
+    }
+}
+
+fn update_presence(state: &AppState, presence: &SharedPresence, update: PresenceUpdate) {
+    if !state.allow_game_presence() {
+        return;
+    }
+    let mut current = presence.borrow_mut();
+    if let Some(pending) = current.pending_overrides.as_mut() {
+        pending.apply(update);
+        return;
+    }
+    let now = Instant::now();
+    let delay = current.last_rpc_update_at.map_or(Duration::ZERO, |last| {
+        SHORTEST_TIME_BETWEEN_RPC_UPDATES.saturating_sub(now.duration_since(last))
+    });
+    let Some(game) = current.game.as_mut() else {
+        return;
+    };
+    if delay.is_zero() {
+        game.overrides.apply(update);
+        current.last_rpc_update_at = Some(now);
+        drop(current);
+        fetch_missing_assets(state, presence);
+        return;
+    }
+
+    let mut pending = game.overrides.clone();
+    pending.apply(update);
+    current.pending_overrides = Some(pending);
+    current.flush_rpc = Some(glib::timeout_add_local_once(
+        delay,
+        glib::clone!(
+            #[weak]
+            state,
+            #[weak]
+            presence,
+            move || {
+                let mut current = presence.borrow_mut();
+                current.flush_rpc.take();
+                let pending = current.pending_overrides.take();
+                if let (Some(game), Some(pending)) = (current.game.as_mut(), pending) {
+                    game.overrides = pending;
+                    current.last_rpc_update_at = Some(Instant::now());
+                    drop(current);
+                    fetch_missing_assets(&state, &presence);
+                    show(&state, &presence);
+                }
+            }
+        ),
+    ));
 }
 
 fn fetch_missing_assets(state: &AppState, presence: &SharedPresence) {
@@ -403,4 +456,56 @@ fn now_in_seconds() -> i64 {
         .ok()
         .and_then(|since_epoch| i64::try_from(since_epoch.as_secs()).ok())
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::backend::bloxstrap_rpc::presence_update_in;
+    #[test]
+    fn coalesces_partial_updates_without_leaking_into_another_game() {
+        let state = glib::Object::builder::<AppState>()
+            .property("allow-game-presence", true)
+            .build();
+        let presence = SharedPresence::default();
+        presence.borrow_mut().game = Some(CurrentGame {
+            place_id: 123,
+            universe_id: None,
+            joined_at: 0,
+            details: None,
+            overrides: Overrides::default(),
+            refreshing_details: glib::timeout_add_local_once(Duration::from_secs(60), || {}),
+        });
+        presence.borrow_mut().last_rpc_update_at =
+            Some(Instant::now() - Duration::from_millis(975));
+
+        let update = |fields| {
+            presence_update_in(&format!(
+                r#"[BloxstrapRPC] {{"command":"SetRichPresence","data":{fields}}}"#
+            ))
+            .unwrap()
+        };
+        update_presence(&state, &presence, update(r#"{"details":"Building"}"#));
+        update_presence(&state, &presence, update(r#"{"state":"Round 2"}"#));
+
+        while presence.borrow().flush_rpc.is_some() {
+            glib::MainContext::default().iteration(true);
+        }
+        let result = presence
+            .borrow()
+            .game
+            .as_ref()
+            .unwrap()
+            .overrides
+            .over(idle_presence(None), &HashMap::new());
+        assert_eq!(result.details, "Building");
+        assert_eq!(result.state.as_deref(), Some("Round 2"));
+        update_presence(&state, &presence, update(r#"{"state":"Discard on exit"}"#));
+        leave_game(&presence);
+        let current = presence.borrow();
+        assert!(current.game.is_none());
+        assert!(current.flush_rpc.is_none());
+        assert!(current.pending_overrides.is_none());
+        assert!(current.last_rpc_update_at.is_none());
+    }
 }

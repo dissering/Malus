@@ -30,13 +30,26 @@ pub fn general_section(state: &AppState) -> gtk::Box {
     group.add(&advanced_row);
 
     let discord_rich_presence_row =
-        switch_row(state, "discord-rich-presence", "Show what you're playing");
+        switch_row(state, "discord-rich-presence", "Discord Rich Presence");
     discord_rich_presence_row
-        .set_subtitle("Show the Roblox game you're in on your Discord profile");
+        .set_subtitle("Show the Roblox experience you’re playing on your Discord profile");
     ask_for_discord_access_when_turned_on(&discord_rich_presence_row);
 
     let discord_group = adw::PreferencesGroup::builder().title("Discord").build();
     discord_group.add(&discord_rich_presence_row);
+    let game_presence_row = switch_row(
+        state,
+        "allow-game-presence",
+        "Allow game activity overrides",
+    );
+    game_presence_row.set_subtitle(
+        "Let experiences customize Discord text, timers, and images through BloxstrapRPC",
+    );
+    state
+        .bind_property("discord-rich-presence", &game_presence_row, "sensitive")
+        .sync_create()
+        .build();
+    discord_group.add(&game_presence_row);
 
     let section = gtk::Box::new(gtk::Orientation::Vertical, 12);
     section.append(&group);

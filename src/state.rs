@@ -42,10 +42,11 @@ pub const QUADRA_PREFIX: &str = "Tiltframe";
 pub const ROSEMARY_DEFAULT_PREFIX: &str = "Rosemary default";
 
 const SAVE_DELAY_AFTER_LAST_CHANGE: Duration = Duration::from_millis(500);
-const SAVED_PROPERTIES: [&str; 42] = [
+const SAVED_PROPERTIES: [&str; 43] = [
     "launch-mode",
     "run-in-background",
     "discord-rich-presence",
+    "allow-game-presence",
     "runtime",
     "runner",
     "custom-runner-path",
@@ -139,6 +140,7 @@ struct SavedSettings {
     launch_mode: LaunchMode,
     run_in_background: bool,
     discord_rich_presence: bool,
+    allow_game_presence: bool,
     runtime: Runtime,
     runner: String,
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -196,6 +198,7 @@ impl Default for SavedSettings {
             launch_mode: LaunchMode::default(),
             run_in_background: false,
             discord_rich_presence: false,
+            allow_game_presence: true,
             runtime: Runtime::default(),
             runner: QUADRA_RUNNER.to_owned(),
             custom_runner_path: String::new(),
@@ -269,6 +272,8 @@ mod imp {
         run_in_background: Cell<bool>,
         #[property(get, set)]
         discord_rich_presence: Cell<bool>,
+        #[property(get, set)]
+        allow_game_presence: Cell<bool>,
         #[property(get, set, builder(Runtime::default()))]
         runtime: Cell<Runtime>,
         #[property(get, set)]
@@ -443,6 +448,7 @@ impl AppState {
             .property("launch-mode", settings.launch_mode)
             .property("run-in-background", settings.run_in_background)
             .property("discord-rich-presence", settings.discord_rich_presence)
+            .property("allow-game-presence", settings.allow_game_presence)
             .property("runtime", settings.runtime)
             .property("runner", settings.runner)
             .property("custom-runner-path", settings.custom_runner_path)
@@ -662,6 +668,7 @@ impl AppState {
             launch_mode: self.launch_mode(),
             run_in_background: self.run_in_background(),
             discord_rich_presence: self.discord_rich_presence(),
+            allow_game_presence: self.allow_game_presence(),
             runtime: self.runtime(),
             runner: self.runner(),
             custom_runner_path: self.custom_runner_path(),

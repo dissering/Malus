@@ -16,7 +16,16 @@ use std::rc::Rc;
 const APP_ID: &str = "io.github.dissering.Tiltframe";
 
 fn main() -> glib::ExitCode {
-    if let Some(exit_code) = command_line::run_report_if_requested() {
+    use command_line::Command;
+
+    let args = match command_line::normalized_arguments(std::env::args().collect()) {
+        Ok(args) => args,
+        Err(error) => {
+            eprintln!("{error}");
+            return glib::ExitCode::FAILURE;
+        }
+    };
+    if let Some(exit_code) = command_line::run_report_if_requested(&args) {
         return exit_code;
     }
 
@@ -49,9 +58,12 @@ fn main() -> glib::ExitCode {
         quadra,
         move |_, command_line| {
             if let Some(quadra) = quadra.get() {
-                match command_line::launch_requested_by(command_line) {
-                    Some(request) => quadra.launch_directly(request),
-                    None => quadra.activate(),
+                match command_line::requested_by(command_line) {
+                    Command::Launch(request) => quadra.launch_directly(request),
+                    Command::Activate => quadra.activate(),
+                    Command::Menu => quadra.open_menu(),
+                    Command::Settings => quadra.open_settings(),
+                    Command::Logs => quadra.open_logs(),
                 }
             }
             glib::ExitCode::SUCCESS
@@ -64,14 +76,17 @@ fn main() -> glib::ExitCode {
         }
     });
 
-    app.run()
+    app.run_with_args(&args)
 }
 
 fn follow_theme(state: &AppState) {
     utils::register_bundled_fonts();
 
     let display = gtk::gdk::Display::default().unwrap();
-    gtk::IconTheme::for_display(&display).add_search_path(glib::user_data_dir().join("icons"));
+    gio::resources_register_include!("tiltframe-icons.gresource").expect("load Tiltframe icons");
+    let icons = gtk::IconTheme::for_display(&display);
+    icons.add_resource_path("/io/github/dissering/Tiltframe/icons");
+    icons.add_search_path(glib::user_data_dir().join("icons"));
     gtk::Window::set_default_icon_name(APP_ID);
     let theme = gtk::CssProvider::new();
     gtk::style_context_add_provider_for_display(
@@ -83,7 +98,9 @@ fn follow_theme(state: &AppState) {
     let header = gtk::CssProvider::new();
     header.load_from_string(
         ".app-header { padding-left: 0px; }
-         .app-header .app-icon { margin-left: 8px; }",
+         .app-header .app-icon { margin-left: 12px; }
+         .home-card { padding: 26px 28px 24px; border-radius: 22px; }
+         .home-card .title-1 { margin-top: 2px; }",
     );
     gtk::style_context_add_provider_for_display(
         &display,

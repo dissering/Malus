@@ -44,32 +44,32 @@ pub fn settings_page(state: &AppState) -> gtk::Widget {
         &scrollable(&general_section(state)),
         Some("general"),
         "General",
-        "preferences-system-symbolic",
+        "tiltframe-settings-symbolic",
     );
     let fast_flags = stack.add_titled_with_icon(
         &scrollable(&fast_flags::fast_flags_section(state)),
         Some("fast-flags"),
         "FastFlags",
-        "view-list-symbolic",
+        "tiltframe-sliders-horizontal-symbolic",
     );
     let mods = stack.add_titled_with_icon(
         &scrollable(&mods_section(state)),
         Some("mods"),
         "Mods",
-        "application-x-addon-symbolic",
+        "tiltframe-package-symbolic",
     );
     let vr = stack.add_titled_with_icon(
         &scrollable(&vr_section(state)),
         Some("vr"),
         "VR",
-        "input-gaming-symbolic",
+        "tiltframe-glasses-symbolic",
     );
     if !is_running_in_flatpak() {
         stack.add_titled_with_icon(
             &scrollable(&integration_section(state)),
             Some("integration"),
             "Integration",
-            "view-app-grid-symbolic",
+            "tiltframe-link-symbolic",
         );
     }
     let advanced_content = scrollable(&advanced_section(state));
@@ -77,7 +77,7 @@ pub fn settings_page(state: &AppState) -> gtk::Widget {
         &advanced_content,
         Some("advanced"),
         "Advanced",
-        "preferences-dev-symbolic",
+        "tiltframe-terminal-symbolic",
     );
 
     let advanced_page = stack.page(&advanced_content);

@@ -45,6 +45,7 @@ pub use controller_access::{
     command_to_change as controller_access_command, is_granted as controller_access_is_granted,
 };
 pub use desktop_entries::Shortcut;
+pub use destination::game_uri;
 pub use discord_access::{MissingDiscordAccess, missing as missing_discord_access};
 pub use handlers::Handler;
 pub use launch::launch_wrapper_problem;

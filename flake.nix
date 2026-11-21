@@ -27,6 +27,7 @@
 
           nativeBuildInputs = with pkgs; [
             pkg-config
+            glib
             wrapGAppsHook4
             lld
             clang

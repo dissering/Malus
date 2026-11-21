@@ -5,6 +5,7 @@ use crate::components::grid_backdrop::grid_backdrop;
 use crate::components::header::bar;
 use crate::components::launch_window::launch_window;
 use crate::components::line_field_backdrop::line_field_backdrop;
+use crate::components::logs_dialog::logs_dialog;
 use crate::components::play_action::PlayAction;
 use crate::components::tray::{TrayIcon, TrayRequest};
 use crate::pages::home::home_page;
@@ -128,6 +129,19 @@ impl Quadra {
         }
     }
 
+    pub fn open_menu(&self) {
+        self.show(Page::Home);
+    }
+
+    pub fn open_settings(&self) {
+        self.show(Page::Settings);
+    }
+
+    pub fn open_logs(&self) {
+        self.open_menu();
+        logs_dialog(&self.state).present(Some(&self.window));
+    }
+
     fn show(&self, page: Page) {
         self.launched_directly.set(false);
         self.pages.set_visible_child_name(page.name());
@@ -136,8 +150,8 @@ impl Quadra {
 
     fn handle(self: &Rc<Self>, request: TrayRequest) {
         match request {
-            TrayRequest::OpenHome => self.show(Page::Home),
-            TrayRequest::OpenSettings => self.show(Page::Settings),
+            TrayRequest::OpenHome => self.open_menu(),
+            TrayRequest::OpenSettings => self.open_settings(),
             TrayRequest::PerformPlayAction => {
                 let action = PlayAction::for_client(&self.state, self.state.current_client());
                 if action.is_available(&self.state) {
@@ -246,20 +260,20 @@ fn pages(state: &AppState) -> ViewStack {
         &home_page(state),
         Some(Page::Home.name()),
         "Home",
-        "go-home-symbolic",
+        "tiltframe-house-symbolic",
     );
     let servers = pages.add_titled_with_icon(
         &servers_page(state),
         Some(Page::Servers.name()),
         "Servers",
-        "network-server-symbolic",
+        "tiltframe-server-symbolic",
     );
     show_only_while_roblox_is_selected(&servers, state);
     pages.add_titled_with_icon(
         &settings_page(state),
         Some(Page::Settings.name()),
         "Settings",
-        "emblem-system-symbolic",
+        "tiltframe-settings-symbolic",
     );
 
     pages

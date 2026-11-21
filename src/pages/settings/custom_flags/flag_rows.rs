@@ -67,10 +67,10 @@ fn flag_row(state: &AppState, name: &str, value: &FastFlagValue) -> adw::ActionR
     show_if_ignored(&warning, name);
     row.add_prefix(&warning);
 
-    let edit = row_button("document-edit-symbolic", "Edit override");
+    let edit = row_button("tiltframe-pencil-symbolic", "Edit override");
     row.add_suffix(&edit);
     row.set_activatable_widget(Some(&edit));
-    let remove = row_button("edit-delete-symbolic", "Remove override");
+    let remove = row_button("tiltframe-trash-symbolic", "Remove override");
     row.add_suffix(&remove);
 
     let name = name.to_owned();

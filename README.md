@@ -6,7 +6,7 @@ Tiltframe launches the macOS Roblox Player and Studio on x86-64 Linux through Ro
 
 ## Install on Linux
 
-You’ll need a current stable Rust toolchain, a C toolchain, pkg-config, and development packages for GTK 4.18+, libadwaita 1.7+, and Pango 1.56+. Clang is optional for VR support.
+You’ll need a current stable Rust toolchain, a C toolchain, pkg-config, `glib-compile-resources`, and development packages for GTK 4.18+, libadwaita 1.7+, and Pango 1.56+. Clang is optional for VR support.
 
 ```sh
 git clone --branch tiltframe https://github.com/dissering/Tiltframe.git
@@ -15,6 +15,19 @@ bash install.sh
 ```
 
 Open **Tiltframe** from your app menu or run `~/.local/bin/tiltframe`. On first use, the launcher downloads the game client and its runtime. Tiltframe uses its own XDG directories, so you can install it alongside Quadra.
+
+## Command line
+
+```sh
+tiltframe launch
+tiltframe launch 'roblox://experiences/start?placeId=123'
+tiltframe join 123
+tiltframe studio 'my place.rbxl'
+tiltframe settings
+tiltframe logs
+```
+
+`tiltframe join PLACE_ID SERVER_ID` accepts a server UUID if you have one. `tiltframe menu` opens the launcher, `tiltframe hardware` prints driver and hardware information, and `tiltframe diagnostics [DIRECTORY]` saves a diagnostics archive. Run `tiltframe help` for all commands. Existing desktop shortcuts and Roblox links continue to use the original flags.
 
 ## FastFlags
 
@@ -26,6 +39,12 @@ Open **Settings → FastFlags** while Roblox Player is selected.
 - Select **Reset all** to remove every override and return to Roblox defaults.
 
 Roblox controls which local overrides it applies. [FastFlags allowlist announcement](https://devforum.roblox.com/t/allowlist-for-local-client-configuration-via-fast-flags/3966569)
+
+## Discord and BloxstrapRPC
+
+Enable **Discord Rich Presence** under **Settings → General → Discord**. **Allow game activity overrides** lets an experience use BloxstrapRPC `SetRichPresence` to customize text, timestamps, and Roblox asset images. Turn it off to keep Tiltframe’s default Discord activity. Rapid partial updates are combined so separate fields can arrive together.
+
+The upstream SDK also defines `SetLaunchData` for invite deep links. Tiltframe currently handles `SetRichPresence`. [BloxstrapRPC SDK](https://github.com/bloxstraplabs/bloxstrap-rpc-sdk/releases/tag/v1.1.0)
 
 ## Graphics and logs
 
@@ -40,3 +59,5 @@ Run `cargo run --locked` for a development build and `cargo test --locked` for t
 Based on [Quadra 0.50.4](https://github.com/QuadraHQ/Quadra/tree/v0.50.4), powered by the [QuadraHQ Rosemary fork](https://github.com/QuadraHQ/rosemary-fork), and inspired by [Fishstrap](https://github.com/fishstrap/fishstrap). Tiltframe is licensed under [GPL-3.0-only](LICENSE).
 
 The Tiltframe icon is a teal retint of the [original Quadra icon](https://github.com/QuadraHQ/Quadra/tree/v0.50.4/data/icons/hicolor).
+
+Navigation and action icons are from [Lucide](https://lucide.dev/). See the [Lucide license notice](assets/lucide/LICENSE).

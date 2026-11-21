@@ -5,15 +5,14 @@ use gtk::glib;
 
 pub fn logs_button(state: &AppState) -> gtk::Button {
     let content = adw::ButtonContent::builder()
-        .label("Show Logs")
-        .icon_name("utilities-terminal-symbolic")
+        .label("Logs")
+        .icon_name("tiltframe-terminal-symbolic")
         .build();
 
     let button = gtk::Button::builder()
         .child(&content)
         .css_classes(["flat"])
         .halign(gtk::Align::Center)
-        .margin_top(12)
         .build();
 
     button.connect_clicked(glib::clone!(
