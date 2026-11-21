@@ -1,27 +1,40 @@
+<img src="data/icons/hicolor/128x128/apps/io.github.dissering.Tiltframe.png" width="88" height="88" alt="Tiltframe logo">
+
 # Tiltframe
 
-Tiltframe is a Linux launcher for the macOS Roblox Player and Studio. It is based on [Quadra 0.50.4](https://github.com/QuadraHQ/Quadra/tree/v0.50.4), uses [Rosemary](https://github.com/QuadraHQ/rosemary-fork) for compatibility, and takes inspiration from [Fishstrap](https://github.com/fishstrap/fishstrap) for FastFlag management.
+Tiltframe launches the macOS Roblox Player and Studio on x86-64 Linux through Rosemary. It adds a dedicated FastFlags editor and caps how much live log output the launcher keeps in memory.
 
-## Install from source
+## Install on Linux
 
-Use a Linux x86-64 system with a recent stable Rust toolchain, a C toolchain, pkg-config, GTK 4.18+, libadwaita 1.7+, and Pango 1.56+ development files. Clang is optional for VR support.
-
-From this checkout, run:
+You’ll need a current stable Rust toolchain, a C toolchain, pkg-config, and development packages for GTK 4.18+, libadwaita 1.7+, and Pango 1.56+. Clang is optional for VR support.
 
 ```sh
+git clone --branch tiltframe https://github.com/dissering/Tiltframe.git
+cd Tiltframe
 bash install.sh
 ```
 
-Open **Tiltframe** from your app menu. For a development build, use `cargo run --locked`.
-
-Tiltframe uses separate `tiltframe` directories under your XDG config, data, and cache directories. It downloads the Roblox client and Rosemary on first use. You can transfer FastFlags from another launcher by exporting them as JSON and importing them from **Settings → FastFlags** in Tiltframe.
+Open **Tiltframe** from your app menu or run `~/.local/bin/tiltframe`. On first use, the launcher downloads the game client and its runtime. Tiltframe uses its own XDG directories, so you can install it alongside Quadra.
 
 ## FastFlags
 
-Search by flag name or value. Turn on **Overrides only** to review what you changed. Use **Quick settings** to set low texture quality or return textures to their defaults. Under **Custom overrides**, you can edit individual entries or import and export JSON. **Reset all** restores Roblox defaults by removing all overrides.
+Open **Settings → FastFlags** while Roblox Player is selected.
 
-Roblox decides which local overrides it applies. The launcher writes Player settings as `ClientAppSettings.json` and checks the macOS client's published allowlist.
+- Search by name or value, or select **Overrides only** to review your changes.
+- Use **Quick settings** for low or default texture quality.
+- Use **Custom overrides** to edit individual flags, import from a JSON file or pasted text, and copy or save your current settings.
+- Select **Reset all** to remove every override and return to Roblox defaults.
 
-## License
+Roblox controls which local overrides it applies. [FastFlags allowlist announcement](https://devforum.roblox.com/t/allowlist-for-local-client-configuration-via-fast-flags/3966569)
 
-Tiltframe is a GPL-3.0-only fork of Quadra. The original project and contributors are credited in the source history. See [LICENSE](LICENSE).
+## Graphics and logs
+
+Choose **Metal (via Vulkan)** or **OpenGL** in the launcher’s graphics settings. Enable **MangoHud** there to compare FPS, frame times, and GPU load during the same gameplay route. Tiltframe’s log handling reduces launcher overhead during busy sessions. Gameplay FPS gains are unmeasured.
+
+The live viewer keeps recent output. The full log for the current launch is at `${XDG_DATA_HOME:-~/.local/share}/tiltframe/logs/roblox.log`.
+
+## Development and credits
+
+Run `cargo run --locked` for a development build and `cargo test --locked` for the test suite. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Based on [Quadra 0.50.4](https://github.com/QuadraHQ/Quadra/tree/v0.50.4), powered by the [QuadraHQ Rosemary fork](https://github.com/QuadraHQ/rosemary-fork), and inspired by [Fishstrap](https://github.com/fishstrap/fishstrap). Tiltframe is licensed under [GPL-3.0-only](LICENSE).
