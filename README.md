@@ -38,3 +38,5 @@ The live viewer keeps recent output. The full log for the current launch is at `
 Run `cargo run --locked` for a development build and `cargo test --locked` for the test suite. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Based on [Quadra 0.50.4](https://github.com/QuadraHQ/Quadra/tree/v0.50.4), powered by the [QuadraHQ Rosemary fork](https://github.com/QuadraHQ/rosemary-fork), and inspired by [Fishstrap](https://github.com/fishstrap/fishstrap). Tiltframe is licensed under [GPL-3.0-only](LICENSE).
+
+The Tiltframe icon adapts the [Roblox mark from TheSVG](https://github.com/glincker/thesvg/blob/main/public/icons/roblox/default.svg). See the [TheSVG license notice](data/icons/THE-SVG-LICENSE.txt).

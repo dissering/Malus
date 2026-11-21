@@ -1,14 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Tiltframe</title>
+  <desc>A mint tilted tile on a midnight blue frame, based on the Roblox icon from TheSVG.</desc>
   <defs>
-    <linearGradient id="frame" x2="1" y2="1" gradientUnits="objectBoundingBox">
+    <linearGradient id="tile" x1="18" y1="15" x2="105" y2="108" gradientUnits="userSpaceOnUse">
       <stop stop-color="#b6fff1"/>
-      <stop offset="1" stop-color="#27baab"/>
+      <stop offset=".55" stop-color="#60dfcf"/>
+      <stop offset="1" stop-color="#1fa6c4"/>
     </linearGradient>
+    <path id="shape" fill-rule="evenodd" d="M18.926 23.998 0 18.892 5.075.002 24 5.108ZM15.348 10.09l-5.282-1.453-1.414 5.273 5.282 1.453z"/>
+    <clipPath id="tile-clip">
+      <use href="#shape" transform="translate(24 21) scale(3.33333)"/>
+    </clipPath>
   </defs>
-  <rect x="4" y="4" width="120" height="120" rx="30" fill="#102328" stroke="#284850" stroke-width="2"/>
-  <g transform="rotate(17 64 64)">
-    <path fill="url(#frame)" fill-rule="evenodd" d="M39 30h50l13 13v38l-17 17H40L26 84V43zm13 23v22h24V53z"/>
-    <path fill="#f0fffc" d="M26 43l13-13h50l13 13H40L26 57z"/>
-    <path fill="#157b75" d="M102 67v14L85 98H53l11-12h21z"/>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#111d30" stroke="#304361" stroke-width="2"/>
+  <path d="M17 42V28l11-11h14m44 94h14l11-11V86" fill="none" stroke="#6ddbd3" stroke-width="3" stroke-linecap="round"/>
+  <use href="#shape" transform="translate(24 27) scale(3.33333)" fill="#12758b"/>
+  <g clip-path="url(#tile-clip)">
+    <path d="M24 21h80v80H24z" fill="url(#tile)"/>
+    <path d="m24 43 20-17 60 18v9L45 37 24 54z" fill="#e5fff9" opacity=".66"/>
+    <path d="m76 100 28-29v10l-19 20z" fill="#087a91" opacity=".48"/>
   </g>
 </svg>
