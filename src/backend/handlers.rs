@@ -20,9 +20,9 @@ impl Handler {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::RobloxLinks => "Open Roblox links with Tiltframe",
-            Self::StudioLinks => "Open Roblox Studio links with Tiltframe",
-            Self::StudioPlaces => "Open place files with Tiltframe",
+            Self::RobloxLinks => "Open Roblox links with Malus",
+            Self::StudioLinks => "Open Roblox Studio links with Malus",
+            Self::StudioPlaces => "Open place files with Malus",
         }
     }
 
@@ -43,7 +43,7 @@ impl Handler {
             Self::RobloxLinks => DesktopEntry {
                 file_name: "io.github.dissering.Tiltframe.RobloxLinks.desktop",
                 name: "Roblox",
-                description: "Opens Roblox links with Tiltframe",
+                description: "Opens Roblox links with Malus",
                 command_line_option: Some("--roblox"),
                 opens: Opens::Link,
                 mime_types: &["x-scheme-handler/roblox", "x-scheme-handler/roblox-player"],
@@ -52,7 +52,7 @@ impl Handler {
             Self::StudioLinks => DesktopEntry {
                 file_name: "io.github.dissering.Tiltframe.StudioLinks.desktop",
                 name: "Roblox Studio",
-                description: "Opens Roblox Studio links with Tiltframe",
+                description: "Opens Roblox Studio links with Malus",
                 command_line_option: Some("--studio"),
                 opens: Opens::Link,
                 mime_types: &[
@@ -64,7 +64,7 @@ impl Handler {
             Self::StudioPlaces => DesktopEntry {
                 file_name: "io.github.dissering.Tiltframe.StudioPlaces.desktop",
                 name: "Roblox Studio",
-                description: "Opens Roblox places in Roblox Studio with Tiltframe",
+                description: "Opens Roblox places in Roblox Studio with Malus",
                 command_line_option: Some("--studio"),
                 opens: Opens::File,
                 mime_types: &["application/x-roblox-rbxl", "application/x-roblox-rbxlx"],

@@ -43,7 +43,7 @@ fn compile_icons(out_directory: &Path) {
         .arg("--target")
         .arg(out_directory.join("tiltframe-icons.gresource"))
         .arg("assets/icons.gresource.xml"))
-    .expect("compile Tiltframe's Lucide icon resources");
+    .expect("compile Malus's Lucide icon resources");
 }
 
 fn build_vr_library(out_directory: &Path, library: &Path) -> Result<(), String> {

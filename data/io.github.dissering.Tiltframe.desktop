@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=Tiltframe
+Name=Malus
 Comment=Run Roblox on Linux
-Exec=tiltframe
+Exec=malus
 Icon=io.github.dissering.Tiltframe
 Keywords=roblox;game;gaming;social;experience;launcher;
 Categories=GNOME;GTK;Game;

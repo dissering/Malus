@@ -40,6 +40,6 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: Tiltframe-x86_64.tar.gz
-          path: tarball/Tiltframe-x86_64.tar.gz
+          name: Malus-x86_64.tar.gz
+          path: tarball/Malus-x86_64.tar.gz
           if-no-files-found: error

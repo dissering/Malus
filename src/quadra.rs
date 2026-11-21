@@ -291,7 +291,7 @@ fn window(app: &Application, state: &AppState, pages: &ViewStack) -> Application
 
     let window = ApplicationWindow::builder()
         .application(app)
-        .title("Tiltframe")
+        .title("Malus")
         .default_width(800)
         .default_height(600)
         .hide_on_close(true)

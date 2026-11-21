@@ -1,4 +1,4 @@
-# Contributing to Tiltframe
+# Contributing to Malus
 
 Use the `tiltframe` branch for changes to this fork. Run `cargo test --locked` and `git diff --check` before submitting changes. For graphics or performance changes, include the GPU, renderer, resolution, and a repeatable test scene.
 

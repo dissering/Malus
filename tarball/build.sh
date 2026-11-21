@@ -3,14 +3,14 @@ set -euo pipefail
 
 cd "$(dirname "$(realpath "$0")")"
 
-name=Tiltframe-x86_64
+name=Malus-x86_64
 staging="$PWD/staging"
 root="$staging/$name"
 
 cargo build --release --locked --manifest-path ../Cargo.toml
 
 rm -rf "$staging" "$name.tar.gz"
-install -Dm755 ../target/release/tiltframe "$root/bin/tiltframe"
+install -Dm755 ../target/release/malus "$root/bin/malus"
 install -Dm644 ../data/io.github.dissering.Tiltframe.desktop \
     "$root/share/applications/io.github.dissering.Tiltframe.desktop"
 mkdir -p "$root/share/icons"

@@ -29,7 +29,7 @@ fn main() -> glib::ExitCode {
         return exit_code;
     }
 
-    glib::set_application_name("Tiltframe");
+    glib::set_application_name("Malus");
     let app = Application::builder()
         .application_id(APP_ID)
         .flags(gio::ApplicationFlags::HANDLES_COMMAND_LINE)
@@ -83,7 +83,7 @@ fn follow_theme(state: &AppState) {
     utils::register_bundled_fonts();
 
     let display = gtk::gdk::Display::default().unwrap();
-    gio::resources_register_include!("tiltframe-icons.gresource").expect("load Tiltframe icons");
+    gio::resources_register_include!("tiltframe-icons.gresource").expect("load Malus icons");
     let icons = gtk::IconTheme::for_display(&display);
     icons.add_resource_path("/io/github/dissering/Tiltframe/icons");
     icons.add_search_path(glib::user_data_dir().join("icons"));

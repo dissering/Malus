@@ -6,7 +6,7 @@ sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
   - org.freedesktop.Sdk.Extension.llvm23
 
-command: tiltframe
+command: malus
 
 finish-args:
   - --share=network
@@ -72,7 +72,7 @@ modules:
       - |
         export RUSTFLAGS="$RUSTFLAGS -C link-arg=-Wl,-rpath,/app/lib64 -C link-arg=-Wl,-rpath,/app/lib"
         cargo --offline build --release --locked
-      - install -Dm755 target/release/tiltframe -t /app/bin/
+      - install -Dm755 target/release/malus -t /app/bin/
       - install -Dm644 LICENSE -t /app/share/licenses/quadra/
       - mkdir -p /app/share/icons && cp -r data/icons/hicolor /app/share/icons/
       - install -Dm644 flatpak/io.github.dissering.Tiltframe.desktop -t /app/share/applications/

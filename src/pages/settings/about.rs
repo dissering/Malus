@@ -5,7 +5,7 @@ const UPSTREAM: &str = "https://github.com/QuadraHQ/Quadra";
 
 pub fn show_about(parent: &impl IsA<gtk::Widget>) {
     let dialog = adw::AboutDialog::builder()
-        .application_name("Tiltframe")
+        .application_name("Malus")
         .application_icon(crate::APP_ID)
         .version(VERSION)
         .license_type(gtk::License::Gpl30Only)

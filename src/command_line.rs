@@ -48,13 +48,12 @@ pub fn normalized_arguments(mut args: Vec<String>) -> Result<Vec<String>, String
                 .and_then(|id| id.parse::<u64>().ok())
                 .filter(|id| *id > 0);
             let Some(place_id) = valid_place else {
-                return Err("Usage: tiltframe join PLACE_ID [SERVER_ID]".to_owned());
+                return Err("Usage: malus join PLACE_ID [SERVER_ID]".to_owned());
             };
             let server = args.get(3).map(String::as_str);
             if args.len() > 4 || server.is_some_and(|id| !glib::uuid_string_is_valid(id)) {
                 return Err(
-                    "Usage: tiltframe join PLACE_ID [SERVER_ID], where SERVER_ID is a UUID"
-                        .to_owned(),
+                    "Usage: malus join PLACE_ID [SERVER_ID], where SERVER_ID is a UUID".to_owned(),
                 );
             }
             let link = backend::game_uri(place_id, server);
@@ -76,7 +75,7 @@ pub fn normalized_arguments(mut args: Vec<String>) -> Result<Vec<String>, String
     }
     if args.len() > 2 + max_targets {
         return Err(format!(
-            "Too many arguments for tiltframe {command}. See tiltframe help."
+            "Too many arguments for malus {command}. See malus help."
         ));
     }
     args[1] = option.to_owned();
@@ -85,21 +84,21 @@ pub fn normalized_arguments(mut args: Vec<String>) -> Result<Vec<String>, String
 
 pub fn add_options(app: &adw::Application) {
     app.set_option_context_summary(Some(
-        "Commands:\n  launch [ROBLOX_LINK]       Launch Roblox Player\n  join PLACE_ID [SERVER_ID]  Join an experience or a specific server\n  studio [PLACE_FILE|LINK]   Launch Roblox Studio\n  menu                       Open the launcher\n  settings                   Open settings\n  logs                       Open live logs\n  hardware                   Print hardware information\n  diagnostics [DIRECTORY]    Save a diagnostics archive\n  version                    Print the Tiltframe version",
+        "Commands:\n  launch [ROBLOX_LINK]       Launch Roblox Player\n  join PLACE_ID [SERVER_ID]  Join an experience or a specific server\n  studio [PLACE_FILE|LINK]   Launch Roblox Studio\n  menu                       Open the launcher\n  settings                   Open settings\n  logs                       Open live logs\n  hardware                   Print hardware information\n  diagnostics [DIRECTORY]    Save a diagnostics archive\n  version                    Print the Malus version",
     ));
     add_flag(app, MENU_OPTION, "Open the launcher");
     add_flag(app, SETTINGS_OPTION, "Open settings");
     add_flag(app, LOGS_OPTION, "Open live logs");
-    add_flag(app, "version", "Print the Tiltframe version, then exit");
+    add_flag(app, "version", "Print the Malus version, then exit");
     add_flag(
         app,
         ROBLOX_OPTION,
-        "Start Roblox without opening Tiltframe, following a roblox:// link if given",
+        "Start Roblox without opening Malus, following a roblox:// link if given",
     );
     add_flag(
         app,
         STUDIO_OPTION,
-        "Start Roblox Studio without opening Tiltframe, following a link or opening a place file if given",
+        "Start Roblox Studio without opening Malus, following a link or opening a place file if given",
     );
     add_flag(
         app,
@@ -130,7 +129,7 @@ pub fn run_report_if_requested(arguments: &[String]) -> Option<glib::ExitCode> {
     };
 
     if is_requested("version").is_some() {
-        println!("Tiltframe {}", env!("CARGO_PKG_VERSION"));
+        println!("Malus {}", env!("CARGO_PKG_VERSION"));
         return Some(glib::ExitCode::SUCCESS);
     }
 
@@ -240,43 +239,40 @@ mod tests {
         let normalize = |args: &[&str]| {
             normalized_arguments(args.iter().map(|arg| (*arg).to_owned()).collect()).unwrap()
         };
+        assert_eq!(normalize(&["malus", "launch"]), ["malus", "--roblox"]);
         assert_eq!(
-            normalize(&["tiltframe", "launch"]),
-            ["tiltframe", "--roblox"]
+            normalize(&["malus", "studio", "my level.rbxl"]),
+            ["malus", "--studio", "my level.rbxl"]
         );
         assert_eq!(
-            normalize(&["tiltframe", "studio", "my level.rbxl"]),
-            ["tiltframe", "--studio", "my level.rbxl"]
+            normalize(&["malus", "--studio", "place.rbxl"]),
+            ["malus", "--studio", "place.rbxl"]
         );
         assert_eq!(
-            normalize(&["tiltframe", "--studio", "place.rbxl"]),
-            ["tiltframe", "--studio", "place.rbxl"]
+            normalize(&["malus", "diagnostics", "/tmp"]),
+            ["malus", "--collect-diagnostics", "/tmp"]
         );
         assert_eq!(
-            normalize(&["tiltframe", "diagnostics", "/tmp"]),
-            ["tiltframe", "--collect-diagnostics", "/tmp"]
-        );
-        assert_eq!(
-            normalize(&["tiltframe", "join", "123"]),
+            normalize(&["malus", "join", "123"]),
             [
-                "tiltframe",
+                "malus",
                 "--roblox",
                 "roblox://experiences/start?placeId=123"
             ]
         );
         assert_eq!(
             normalize(&[
-                "tiltframe",
+                "malus",
                 "join",
                 "123",
                 "74f41c26-97d9-415c-abfa-2b5b684d6573"
             ]),
             [
-                "tiltframe",
+                "malus",
                 "--roblox",
                 "roblox://experiences/start?placeId=123&gameInstanceId=74f41c26-97d9-415c-abfa-2b5b684d6573"
             ]
         );
-        assert!(normalized_arguments(vec!["tiltframe".into(), "join".into(), "0".into()]).is_err());
+        assert!(normalized_arguments(vec!["malus".into(), "join".into(), "0".into()]).is_err());
     }
 }

@@ -1,5 +1,5 @@
 {
-  description = "Nix flake for Tiltframe";
+  description = "Nix flake for Malus";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -19,8 +19,8 @@
         cargoToml = fromTOML (builtins.readFile ./Cargo.toml);
       in
       {
-        packages.tiltframe = pkgs.rustPlatform.buildRustPackage {
-          pname = "tiltframe";
+        packages.malus = pkgs.rustPlatform.buildRustPackage {
+          pname = "malus";
           version = cargoToml.package.version;
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
@@ -47,7 +47,7 @@
             cp -r data/icons/hicolor "$out/share/icons/"
           '';
         };
-        packages.default = self.packages.${system}.tiltframe;
+        packages.default = self.packages.${system}.malus;
       }
     );
 }

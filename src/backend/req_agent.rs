@@ -4,7 +4,7 @@ use std::sync::LazyLock;
 use std::time::Duration;
 use ureq::Agent;
 
-const USER_AGENT: &str = "Tiltframe";
+const USER_AGENT: &str = "Malus";
 const API_TIMEOUT: Duration = Duration::from_secs(15);
 const API_CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
 const DOWNLOAD_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);

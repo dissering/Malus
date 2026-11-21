@@ -34,7 +34,7 @@ done
 rm -rf "$appdir"
 linuxdeploy-x86_64.AppImage \
     --appdir "$appdir" \
-    --executable ../target/release/tiltframe \
+    --executable ../target/release/malus \
     --desktop-file ../data/io.github.dissering.Tiltframe.desktop \
     "${icon_files[@]}" \
     --plugin gtk

@@ -37,8 +37,8 @@ pub const VR_RENDER_SCALE_RANGE: RangeInclusive<u32> = 40..=150;
 pub const LOG_TAIL_LIMIT: usize = 1024 * 1024;
 pub const LOG_TAIL_TARGET: usize = 768 * 1024;
 
-pub const QUADRA_RUNNER: &str = "Tiltframe";
-pub const QUADRA_PREFIX: &str = "Tiltframe";
+pub const QUADRA_RUNNER: &str = "Malus";
+pub const QUADRA_PREFIX: &str = "Malus";
 pub const ROSEMARY_DEFAULT_PREFIX: &str = "Rosemary default";
 
 const SAVE_DELAY_AFTER_LAST_CHANGE: Duration = Duration::from_millis(500);
@@ -736,7 +736,7 @@ fn parse_settings(contents: &str) -> (SavedSettings, Option<SettingsProblem>) {
     let Ok(table) = toml::from_str::<toml::Table>(contents) else {
         return (SavedSettings::default(), Some(SettingsProblem::Unparsable));
     };
-    let table = hidden_title_bar_as_hidden_menu_bar(table);
+    let table = migrate_settings_names(hidden_title_bar_as_hidden_menu_bar(table));
     if let Ok(settings) = table.clone().try_into::<SavedSettings>() {
         return (settings, None);
     }
@@ -750,6 +750,15 @@ fn parse_settings(contents: &str) -> (SavedSettings, Option<SettingsProblem>) {
     let settings = readable.try_into().unwrap_or_default();
     let names = unreadable.keys().cloned().collect();
     (settings, Some(SettingsProblem::InvalidValues(names)))
+}
+
+fn migrate_settings_names(mut table: toml::Table) -> toml::Table {
+    for (key, name) in [("runner", QUADRA_RUNNER), ("prefix", QUADRA_PREFIX)] {
+        if table.get(key).and_then(toml::Value::as_str) == Some("Tiltframe") {
+            table.insert(key.to_owned(), name.into());
+        }
+    }
+    table
 }
 
 fn hidden_title_bar_as_hidden_menu_bar(mut table: toml::Table) -> toml::Table {
@@ -773,11 +782,11 @@ impl SettingsProblem {
     fn explanation(&self, kept_copy: Option<&Path>) -> String {
         let what_happened = match self {
             Self::Unparsable => {
-                "Tiltframe couldn't read your settings file, so every setting is back to its default."
+                "Malus couldn't read your settings file, so every setting is back to its default."
                     .to_owned()
             }
             Self::InvalidValues(names) => format!(
-                "Some of your settings had values Tiltframe doesn't understand, so they're back to their defaults: {}.",
+                "Some of your settings had values Malus doesn't understand, so they're back to their defaults: {}.",
                 names.join(", ")
             ),
         };
@@ -823,7 +832,7 @@ fn read_saved_settings() -> LoadedSettings {
                 settings: SavedSettings::default(),
                 file_existed: true,
                 problem: Some(format!(
-                    "Tiltframe couldn't open your settings file at {} ({error}), so it's using the default settings for now.",
+                    "Malus couldn't open your settings file at {} ({error}), so it's using the default settings for now.",
                     path.display()
                 )),
                 save_repaired_settings: false,
@@ -872,6 +881,15 @@ fn append_log_tail(log: &mut String, text: &str) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn migrates_the_old_built_in_runner_and_prefix_names() {
+        use super::{QUADRA_PREFIX, QUADRA_RUNNER, parse_settings};
+        let (settings, problem) = parse_settings("runner = \"Tiltframe\"\nprefix = \"Tiltframe\"");
+        assert!(problem.is_none());
+        assert_eq!(settings.runner, QUADRA_RUNNER);
+        assert_eq!(settings.prefix, QUADRA_PREFIX);
+    }
+
     #[test]
     fn log_tail_keeps_recent_utf8_when_a_batch_or_history_reaches_the_limit() {
         use super::{LOG_TAIL_LIMIT, LOG_TAIL_TARGET, append_log_tail};

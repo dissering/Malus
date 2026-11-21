@@ -29,15 +29,14 @@ enum Launcher {
 impl Launcher {
     fn current() -> anyhow::Result<Self> {
         if is_running_in_flatpak() {
-            let app_id =
-                std::env::var("FLATPAK_ID").context("Couldn't find Tiltframe's Flatpak ID")?;
+            let app_id = std::env::var("FLATPAK_ID").context("Couldn't find Malus's Flatpak ID")?;
             return Ok(Self::Flatpak { app_id });
         }
         match updater::running_appimage() {
             Some(appimage) => Ok(Self::Executable(appimage)),
             None => std::env::current_exe()
                 .map(Self::Executable)
-                .context("Couldn't find Tiltframe's executable"),
+                .context("Couldn't find Malus's executable"),
         }
     }
 }
@@ -146,17 +145,17 @@ impl DesktopEntry {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Shortcut {
-    Tiltframe,
+    Malus,
     Roblox,
     Studio,
 }
 
 impl Shortcut {
-    pub const ALL: [Self; 3] = [Self::Tiltframe, Self::Roblox, Self::Studio];
+    pub const ALL: [Self; 3] = [Self::Malus, Self::Roblox, Self::Studio];
 
     pub fn entry(self) -> DesktopEntry {
         let (file_name, name, description, command_line_option) = match self {
-            Self::Tiltframe => (
+            Self::Malus => (
                 "io.github.dissering.Tiltframe.desktop",
                 "Quadra",
                 "Opens Quadra",

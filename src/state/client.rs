@@ -40,8 +40,8 @@ impl Client {
 
     pub fn home_title(self) -> &'static str {
         match self {
-            Self::Player => "Tiltframe",
-            Self::Studio => "Tiltframe Studio",
+            Self::Player => "Malus",
+            Self::Studio => "Malus Studio",
         }
     }
 }

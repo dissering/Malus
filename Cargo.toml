@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-only"
 
+[[bin]]
+name = "malus"
+path = "src/main.rs"
+
 [dependencies]
 adw = { version = "0.9.2", package = "libadwaita", features = ["v1_7"] }
 anyhow = "1.0.104"

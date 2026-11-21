@@ -9,13 +9,13 @@ use crate::state::{AppState, LaunchMode, Theme};
 use adw::prelude::*;
 
 pub fn general_section(state: &AppState) -> gtk::Box {
-    let group = adw::PreferencesGroup::builder().title("Tiltframe").build();
+    let group = adw::PreferencesGroup::builder().title("Malus").build();
 
-    let launch_mode_row = choice_row::<LaunchMode>(state, "launch-mode", "When Tiltframe starts");
+    let launch_mode_row = choice_row::<LaunchMode>(state, "launch-mode", "When Malus starts");
     launch_mode_row.set_subtitle("Settings stay available from the system tray");
 
     let run_in_background_row = switch_row(state, "run-in-background", "Run in the background");
-    run_in_background_row.set_subtitle("Keep Tiltframe in the system tray after its window closes");
+    run_in_background_row.set_subtitle("Keep Malus in the system tray after its window closes");
 
     let theme_row = choice_row::<Theme>(state, "theme", "App theme");
     theme_row.set_subtitle("Change the theme to what you like.");

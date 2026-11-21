@@ -6,15 +6,11 @@ pub fn session_group(state: &AppState) -> adw::PreferencesGroup {
     let hide_row = switch_row(
         state,
         "hide-launcher-while-playing",
-        "Hide Tiltframe while playing",
+        "Hide Malus while playing",
     );
-    hide_row.set_subtitle("Closes the window once Roblox opens. Tiltframe quits with the game");
+    hide_row.set_subtitle("Closes the window once Roblox opens. Malus quits with the game");
 
-    let reopen_row = switch_row(
-        state,
-        "open-after-exit",
-        "Open Tiltframe after Roblox exits",
-    );
+    let reopen_row = switch_row(state, "open-after-exit", "Open Malus after Roblox exits");
     let playtime_row = switch_row(state, "show-playtime", "Show playtime");
     playtime_row.set_subtitle("Show your total Roblox playtime on the home page");
 

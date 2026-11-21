@@ -12,7 +12,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const DISCORD_CLIENT_ID: &str = "363445589247131668";
 const QUADRA_ICON_URL: &str = "https://raw.githubusercontent.com/dissering/Tiltframe/tiltframe/data/icons/hicolor/512x512/apps/io.github.dissering.Tiltframe.png";
-const QUADRA_ICON_TEXT: &str = "Tiltframe";
+const QUADRA_ICON_TEXT: &str = "Malus";
 const REFRESH_GAME_DETAILS_EVERY: Duration = Duration::from_secs(60);
 const SHORTEST_TIME_BETWEEN_RPC_UPDATES: Duration = Duration::from_secs(1);
 const WAIT_FOR_JOIN_REPORT: Duration = Duration::from_secs(10);
