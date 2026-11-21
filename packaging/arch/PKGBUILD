@@ -1,5 +1,5 @@
 pkgname=malus
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc='Roblox Player and Studio launcher for Linux through Rosemary'
 arch=(x86_64)
@@ -18,30 +18,36 @@ depends=(
 makedepends=(cargo clang desktop-file-utils glib2-devel lld)
 # GCC and LLD use different LTO object formats for ring's C sources.
 options=(!lto)
-_revision=ed1ef33f9ebe66719a8e7cf7ca16cfefb1fbaa83
-source=("${pkgname}-${pkgver}.tar.gz::https://codeload.github.com/dissering/Malus/tar.gz/${_revision}")
-b2sums=('bfaab16e352af966316aa35c86aa1f929ffaf8bbfb68016f9f6ca18d1763d9b38afda374102fe805c8807533e6d530e37ac0b7c95a7bfe2c0f0956d4e4c8112d')
+_rosemary_archive=Malus-Rosemary-0.5.0-quadra.3-malus.1-x86_64.tar.gz
+source=(
+  "${pkgname}-${pkgver}.tar.gz::https://codeload.github.com/dissering/Malus/tar.gz/refs/tags/v${pkgver}"
+  "${url}/releases/download/v${pkgver}/${_rosemary_archive}"
+)
+noextract=("${_rosemary_archive}")
+sha256sums=('SKIP' 'SKIP')
 
 prepare() {
-  cd "Malus-${_revision}"
+  cd "Malus-${pkgver}"
   cargo fetch --locked --target x86_64-unknown-linux-gnu
 }
 
 build() {
-  cd "Malus-${_revision}"
+  cd "Malus-${pkgver}"
   cargo build --release --frozen
 }
 
 check() {
-  cd "Malus-${_revision}"
+  cd "Malus-${pkgver}"
   desktop-file-validate data/io.github.dissering.Tiltframe.desktop
   target/release/malus --version
 }
 
 package() {
-  cd "Malus-${_revision}"
+  cd "Malus-${pkgver}"
   local app_id=io.github.dissering.Tiltframe
+  printf '%s  %s\n' "$(<packaging/rosemary.sha256)" "$srcdir/$_rosemary_archive" | sha256sum --check -
   install -Dm755 target/release/malus "$pkgdir/usr/bin/malus"
+  install -Dm644 "$srcdir/$_rosemary_archive" "$pkgdir/usr/share/malus/rosemary.tar.gz"
   install -Dm644 "data/$app_id.desktop" "$pkgdir/usr/share/applications/$app_id.desktop"
   install -Dm644 "data/$app_id.xml" "$pkgdir/usr/share/mime/packages/$app_id.xml"
   for icon in data/icons/hicolor/*/apps/"$app_id".png; do

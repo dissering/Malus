@@ -73,6 +73,11 @@ modules:
         export RUSTFLAGS="$RUSTFLAGS -C link-arg=-Wl,-rpath,/app/lib64 -C link-arg=-Wl,-rpath,/app/lib"
         cargo --offline build --release --locked
       - install -Dm755 target/release/malus -t /app/bin/
+      - |
+        if test -f packaging/rosemary.tar.gz; then
+          printf '%s  %s\n' "$(cat packaging/rosemary.sha256)" packaging/rosemary.tar.gz | sha256sum --check
+          install -Dm644 packaging/rosemary.tar.gz /app/share/malus/rosemary.tar.gz
+        fi
       - install -Dm644 LICENSE /app/share/licenses/malus/LICENSE
       - install -Dm644 -t /app/share/licenses/malus assets/fonts/*-OFL.txt
       - mkdir -p /app/share/icons && cp -r data/icons/hicolor /app/share/icons/

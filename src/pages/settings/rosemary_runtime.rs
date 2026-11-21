@@ -1,19 +1,12 @@
 use super::bound_rows::{ChoiceAction, named_choice_row};
 use super::butter_access::butter_access_row;
-use crate::backend::{self, QUADRA_ROSEMARY_VERSION};
+use crate::backend::{self, BUNDLED_ROSEMARY_VERSION};
 use crate::state::{AppState, QUADRA_PREFIX, QUADRA_RUNNER};
 use adw::prelude::*;
 use gtk::glib;
 
 const PROPERTIES_THAT_DECIDE_ROSEMARY_INSTALL_ROW: [&str; 4] =
     ["rosemary-installed", "runner", "first-launch", "busy"];
-const PROPERTIES_THAT_DECIDE_ROSEMARY_UPDATE_ROW: [&str; 5] = [
-    "newer-quadra-rosemary",
-    "rosemary-installed",
-    "runner",
-    "busy",
-    "running",
-];
 const PROPERTIES_THAT_DECIDE_RUNNER_DESCRIPTION: [&str; 2] = ["rosemary-installed", "runner"];
 const PROPERTIES_THAT_DECIDE_PREFIX_STATUS: [&str; 4] = [
     "darwin-base-installed",
@@ -55,7 +48,6 @@ pub fn rosemary_runtime_group(state: &AppState) -> adw::PreferencesGroup {
         .description("Which Rosemary runs Roblox, and where.")
         .build();
     group.add(&rosemary_install_row(state));
-    group.add(&rosemary_update_row(state));
     group.add(&runner_row);
     if let Some(butter_access_row) = butter_access_row() {
         group.add(&butter_access_row);
@@ -189,7 +181,7 @@ fn rosemary_install_row(state: &AppState) -> adw::ActionRow {
     let row = adw::ActionRow::builder()
         .title("Rosemary isn't installed")
         .subtitle(format!(
-            "Install Malus's Rosemary {QUADRA_ROSEMARY_VERSION} to run Roblox."
+            "Install Malus's Rosemary {BUNDLED_ROSEMARY_VERSION} to run Roblox."
         ))
         .build();
     row.add_suffix(&install_button);
@@ -206,47 +198,6 @@ fn rosemary_install_row(state: &AppState) -> adw::ActionRow {
     );
 
     row
-}
-
-fn rosemary_update_row(state: &AppState) -> adw::ActionRow {
-    let update_button = gtk::Button::builder()
-        .label("Update")
-        .css_classes(["suggested-action"])
-        .valign(gtk::Align::Center)
-        .build();
-    update_button.connect_clicked(glib::clone!(
-        #[strong]
-        state,
-        move |_| backend::update_quadra_rosemary(&state)
-    ));
-
-    let row = adw::ActionRow::builder()
-        .title("A newer Rosemary is available")
-        .build();
-    row.add_suffix(&update_button);
-
-    state.follow_properties(
-        &PROPERTIES_THAT_DECIDE_ROSEMARY_UPDATE_ROW,
-        glib::clone!(
-            #[weak]
-            row,
-            #[weak]
-            update_button,
-            move |state| show_rosemary_update_row(&row, &update_button, state)
-        ),
-    );
-
-    row
-}
-
-fn show_rosemary_update_row(row: &adw::ActionRow, update_button: &gtk::Button, state: &AppState) {
-    let newer_version = state.newer_quadra_rosemary();
-    let quadra_rosemary_is_in_use = state.runner() == QUADRA_RUNNER && state.rosemary_installed();
-    row.set_visible(quadra_rosemary_is_in_use && !newer_version.is_empty());
-    row.set_subtitle(&format!(
-        "Rosemary {newer_version} installs when you play, or update now."
-    ));
-    update_button.set_sensitive(!state.busy() && !state.running());
 }
 
 fn show_rosemary_install_row(row: &adw::ActionRow, install_button: &gtk::Button, state: &AppState) {
@@ -283,7 +234,7 @@ fn quadra_rosemary_is_selected_but_missing(state: &AppState) -> bool {
 
 fn runner_description(state: &AppState) -> String {
     if quadra_rosemary_is_selected_but_missing(state) {
-        format!("Malus's Rosemary {QUADRA_ROSEMARY_VERSION} will be installed when you play.")
+        format!("Malus's Rosemary {BUNDLED_ROSEMARY_VERSION} will be installed when you play.")
     } else {
         "The Rosemary build that runs Roblox.".to_owned()
     }

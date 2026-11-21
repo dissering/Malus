@@ -7,7 +7,6 @@ use super::{
 };
 use crate::state::{
     AppState, Client, CommandKey, PresentationMode, Renderer, SwapInterval, TitleBar,
-    USE_MONITOR_REFRESH_RATE,
 };
 use crate::utils::{find_in_path, is_executable_file};
 use anyhow::Context;
@@ -275,13 +274,6 @@ fn rosemary_environment(state: &AppState, vr_session: Option<&VrSession>) -> Vec
 
     if state.mangohud() {
         environment.push(("MANGOHUD", "1".to_owned()));
-    }
-
-    if state.refresh_rate() != USE_MONITOR_REFRESH_RATE {
-        environment.push((
-            "ROSEMARY_SCREEN_REFRESH_RATE",
-            state.refresh_rate().to_string(),
-        ));
     }
 
     if state.block_telemetry() {

@@ -18,6 +18,8 @@ version=$(sed -n 's/^version = "\([^"]*\)"$/\1/p' "$repo_dir/Cargo.toml" | head 
 dpkg --validate-version "$version"
 package_version="$version-1+ubuntu26.04"
 archive="$output_dir/${package_name}_${package_version}_amd64.deb"
+runtime=${MALUS_ROSEMARY_ARCHIVE:-"$repo_dir/packaging/rosemary.tar.gz"}
+printf '%s  %s\n' "$(<"$repo_dir/packaging/rosemary.sha256")" "$runtime" | sha256sum --check -
 
 build_dir=$(mktemp -d)
 trap 'rm -rf "$build_dir"' EXIT
@@ -27,6 +29,7 @@ export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-0}"
 
 cargo build --release --locked --manifest-path "$repo_dir/Cargo.toml"
 install -Dm755 "$CARGO_TARGET_DIR/release/$package_name" "$package/usr/bin/$package_name"
+install -Dm644 "$runtime" "$package/usr/share/malus/rosemary.tar.gz"
 strip --strip-unneeded "$package/usr/bin/$package_name"
 desktop-file-validate "$repo_dir/data/$app_id.desktop"
 install -Dm644 "$repo_dir/data/$app_id.desktop" "$package/usr/share/applications/$app_id.desktop"
@@ -71,7 +74,8 @@ Recommends: xdg-utils
 Homepage: https://github.com/dissering/Malus
 Description: Launch Roblox on Linux
  Malus launches Roblox Player and Studio through the Rosemary runtime.
+ Rosemary is bundled. Roblox is downloaded when needed.
 CONTROL
 
 find "$package" -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
-dpkg-deb --root-owner-group --build "$package" "$archive"
+dpkg-deb --root-owner-group -Zzstd --build "$package" "$archive"

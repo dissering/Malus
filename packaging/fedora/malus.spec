@@ -1,14 +1,15 @@
-%global revision ed1ef33f9ebe66719a8e7cf7ca16cfefb1fbaa83
 %global app_id io.github.dissering.Tiltframe
+%global rosemary_archive Malus-Rosemary-0.5.0-quadra.3-malus.1-x86_64.tar.gz
 %global debug_package %{nil}
 
 Name:           malus
-Version:        0.1.0
+Version:        0.1.1
 Release:        1%{?dist}
 Summary:        Roblox Player and Studio launcher for Linux through Rosemary
 License:        GPL-3.0-only AND OFL-1.1
 URL:            https://github.com/dissering/Malus
-Source0:        %{url}/archive/%{revision}.tar.gz#/%{name}-%{version}.tar.gz
+Source0:        %{url}/archive/refs/tags/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
+Source1:        %{url}/releases/download/v%{version}/%{rosemary_archive}
 ExclusiveArch:  x86_64
 
 BuildRequires:  cargo
@@ -30,16 +31,18 @@ Requires:       shared-mime-info
 
 %description
 Malus launches Roblox Player and Studio on Linux through Rosemary.
-Rosemary and the Roblox client are downloaded when they are needed.
+The Rosemary runtime is bundled. Roblox is downloaded when needed.
 
 %prep
-%autosetup -n Malus-%{revision}
+%autosetup -n Malus-%{version}
 
 %build
 cargo build --release --frozen
 
 %install
+printf '%%s  %%s\n' "$(cat packaging/rosemary.sha256)" '%{SOURCE1}' | sha256sum --check -
 install -Dm755 target/release/malus %{buildroot}%{_bindir}/malus
+install -Dm644 %{SOURCE1} %{buildroot}%{_datadir}/malus/rosemary.tar.gz
 install -Dm644 data/%{app_id}.desktop %{buildroot}%{_datadir}/applications/%{app_id}.desktop
 install -Dm644 data/%{app_id}.xml %{buildroot}%{_datadir}/mime/packages/%{app_id}.xml
 for icon in data/icons/hicolor/*/apps/%{app_id}.png; do
@@ -56,3 +59,5 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{app_id}.desktop
 %{_datadir}/applications/%{app_id}.desktop
 %{_datadir}/icons/hicolor/*/apps/%{app_id}.png
 %{_datadir}/mime/packages/%{app_id}.xml
+%dir %{_datadir}/malus
+%{_datadir}/malus/rosemary.tar.gz

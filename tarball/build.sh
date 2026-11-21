@@ -6,11 +6,24 @@ cd "$(dirname "$(realpath "$0")")"
 name=Malus-x86_64
 staging="$PWD/staging"
 root="$staging/$name"
+binary="${MALUS_BINARY:-../target/release/malus}"
+rosemary_archive="${MALUS_ROSEMARY_ARCHIVE:-../packaging/rosemary.tar.gz}"
 
-cargo build --release --locked --manifest-path ../Cargo.toml
+if [[ -n "${MALUS_ROSEMARY_ARCHIVE:-}" || -f "$rosemary_archive" ]]; then
+    printf '%s  %s\n' "$(<../packaging/rosemary.sha256)" "$rosemary_archive" | sha256sum --check
+else
+    rosemary_archive=
+fi
+
+if [[ -z "${MALUS_BINARY:-}" ]]; then
+    cargo build --release --locked --manifest-path ../Cargo.toml
+fi
 
 rm -rf "$staging" "$name.tar.gz"
-install -Dm755 ../target/release/malus "$root/bin/malus"
+install -Dm755 "$binary" "$root/bin/malus"
+if [[ -n "$rosemary_archive" ]]; then
+    install -Dm644 "$rosemary_archive" "$root/share/malus/rosemary.tar.gz"
+fi
 printf 'Malus portable\n' > "$root/.malus-portable"
 install -Dm644 ../data/io.github.dissering.Tiltframe.desktop \
     "$root/share/applications/io.github.dissering.Tiltframe.desktop"

@@ -55,7 +55,7 @@ pub use launch::launch_wrapper_problem;
 pub use launch_request::{LaunchRequest, StudioTarget};
 pub use library::{Favorites, GamePreview, PreviewRequest, load_game_previews};
 pub use mods::{disabled_units as disabled_mods, enable_unit as enable_mod, folder as mods_folder};
-pub use quadra_rosemary::VERSION as QUADRA_ROSEMARY_VERSION;
+pub use quadra_rosemary::VERSION as BUNDLED_ROSEMARY_VERSION;
 pub use updater::{check_launcher_update, launcher_can_update_itself};
 pub use vr_access::missing as missing_vr_access;
 
@@ -76,7 +76,6 @@ pub fn initialize(state: &AppState) {
         refresh_selected_runner_status,
     );
     state.connect_notify_local(Some("prefix"), |state, _| account::refresh(state));
-    quadra_rosemary::look_for_update(state);
     fast_flag_allowlist::initialize();
     roblox::archive_old_player_bundle();
     fast_flags::initialize(state);
@@ -142,7 +141,6 @@ pub fn refresh(state: &AppState) {
             .collect::<Vec<_>>(),
     );
     state.set_darwin_base_installed(prefix::has_darwin_base(&paths::quadra_prefix_directory()));
-    quadra_rosemary::forget_installed_update(state);
     refresh_selected_runner_status(state);
 
     let installed_roblox = roblox::installed_release(Client::Player);
@@ -251,21 +249,7 @@ pub fn install_rosemary(state: &AppState) {
     run_task(state, quadra_rosemary::install, |state, ()| {
         refresh(state);
         state.set_runner(QUADRA_RUNNER);
-        quadra_rosemary::look_for_update(state);
     });
-}
-
-fn update_quadra_rosemary_before_launch(runner: &Runner, progress: &Progress) {
-    let Some(release) = runner
-        .is_quadra()
-        .then(quadra_rosemary::available_update)
-        .flatten()
-    else {
-        return;
-    };
-    if let Err(error) = quadra_rosemary::update(&release, progress) {
-        eprintln!("Couldn't update Rosemary, launching with the current one: {error:#}");
-    }
 }
 
 pub fn install_darwin_base(state: &AppState) {
@@ -278,21 +262,6 @@ pub fn install_darwin_base(state: &AppState) {
 
 pub fn repair_prefix(state: &AppState) {
     run_prefix_task(state, "Repairing the prefix", prefix::repair);
-}
-
-pub fn update_quadra_rosemary(state: &AppState) {
-    if state.busy() || state.running() {
-        return;
-    }
-    let Some(release) = quadra_rosemary::available_update() else {
-        return;
-    };
-
-    run_task(
-        state,
-        move |progress| quadra_rosemary::update(&release, progress),
-        |state, ()| refresh(state),
-    );
 }
 
 pub fn installed_quadra_rosemary_version() -> Option<String> {
@@ -429,7 +398,6 @@ fn start_playing(state: &AppState, destination: Destination) {
             if should_install_quadra_rosemary {
                 quadra_rosemary::install(progress)?;
             }
-            update_quadra_rosemary_before_launch(&runner, progress);
             let runner = runner.with_current_executable();
             let rosemary = runner.executable.clone();
 
@@ -472,7 +440,6 @@ pub fn open_studio(state: &AppState, target: StudioTarget) {
             if should_install_quadra_rosemary {
                 quadra_rosemary::install(progress)?;
             }
-            update_quadra_rosemary_before_launch(&runner, progress);
             let runner = runner.with_current_executable();
             update_darwin_base_before_launch(
                 &runner.executable,
@@ -562,6 +529,9 @@ fn refresh_selected_runner_status(state: &AppState) {
 }
 
 fn prefer_an_installed_runner(state: &AppState) {
+    if quadra_rosemary::bundled_archive().is_some() {
+        return;
+    }
     let quadra_rosemary_is_missing = !quadra_rosemary::executable().is_file();
     let other_installed_runner = runners::discover(&state.custom_runner_path())
         .into_iter()

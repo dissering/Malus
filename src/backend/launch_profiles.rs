@@ -17,7 +17,6 @@ pub struct LaunchProfile {
     renderer: Renderer,
     presentation_mode: PresentationMode,
     opengl_swap_interval: SwapInterval,
-    refresh_rate: u32,
     #[serde(default)]
     window_size: Option<WindowSize>,
     fast_flags: FastFlags,
@@ -38,7 +37,6 @@ impl LaunchProfile {
             renderer: state.renderer(),
             presentation_mode: state.presentation_mode(),
             opengl_swap_interval: state.opengl_swap_interval(),
-            refresh_rate: state.refresh_rate(),
             window_size: Some(state.window_size()),
             fast_flags: state.fast_flags(),
             death_sound: state.death_sound(),
@@ -81,7 +79,6 @@ impl LaunchProfile {
         state.set_renderer(self.renderer);
         state.set_presentation_mode(self.presentation_mode);
         state.set_opengl_swap_interval(self.opengl_swap_interval);
-        state.set_refresh_rate(self.refresh_rate);
         if let Some(size) = self.window_size {
             state.set_window_size(size);
         }
@@ -211,10 +208,17 @@ mod tests {
             save_profile(&path, "  Performance  ", profile.clone(), SaveMode::Create)?;
             let duplicate = save_profile(&path, "Performance", profile.clone(), SaveMode::Create);
             assert!(duplicate.is_err());
-            assert_eq!(read_profiles(&path)?.get("Performance"), Some(&profile));
+
+            let mut legacy: serde_json::Value = serde_json::from_slice(&fs::read(&path)?)?;
+            legacy["Performance"]["refresh_rate"] = 144.into();
+            fs::write(&path, serde_json::to_vec(&legacy)?)?;
+            let restored = read_profiles(&path)?
+                .remove("Performance")
+                .context("Profile was missing after loading")?;
+            assert_eq!(restored, profile);
 
             let changed: AppState = glib::Object::new();
-            profile.clone().apply(&changed)?;
+            restored.apply(&changed)?;
             assert_eq!(LaunchProfile::capture(&changed), profile);
 
             changed.set_custom_mods(false);

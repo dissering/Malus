@@ -157,20 +157,20 @@ impl Shortcut {
         let (file_name, name, description, command_line_option) = match self {
             Self::Malus => (
                 "io.github.dissering.Tiltframe.desktop",
-                "Quadra",
-                "Opens Quadra",
+                "Malus",
+                "Opens Malus",
                 None,
             ),
             Self::Roblox => (
                 "io.github.dissering.Tiltframe.Roblox.desktop",
                 "Roblox",
-                "Starts Roblox without opening Quadra",
+                "Starts Roblox without opening Malus",
                 Some("--roblox"),
             ),
             Self::Studio => (
                 "io.github.dissering.Tiltframe.Studio.desktop",
                 "Roblox Studio",
-                "Starts Roblox Studio without opening Quadra",
+                "Starts Roblox Studio without opening Malus",
                 Some("--studio"),
             ),
         };

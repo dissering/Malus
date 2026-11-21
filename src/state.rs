@@ -33,7 +33,6 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use serde::{Deserialize, Serialize};
 
-pub const USE_MONITOR_REFRESH_RATE: u32 = 0;
 pub const DEFAULT_VR_RENDER_SCALE: u32 = 70;
 pub const VR_RENDER_SCALE_RANGE: RangeInclusive<u32> = 40..=150;
 pub const LOG_TAIL_LIMIT: usize = 1024 * 1024;
@@ -61,7 +60,6 @@ const SAVED_PROPERTIES: &[&str] = &[
     "prefix",
     "renderer",
     "mangohud",
-    "refresh-rate",
     "presentation-mode",
     "opengl-swap-interval",
     "title-bar",
@@ -145,7 +143,6 @@ struct SavedSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     renderer: Option<Renderer>,
     mangohud: bool,
-    refresh_rate: u32,
     presentation_mode: PresentationMode,
     opengl_swap_interval: SwapInterval,
     title_bar: TitleBar,
@@ -207,7 +204,6 @@ impl Default for SavedSettings {
             legacy_force_opengl: false,
             renderer: None,
             mangohud: false,
-            refresh_rate: USE_MONITOR_REFRESH_RATE,
             presentation_mode: PresentationMode::default(),
             opengl_swap_interval: SwapInterval::default(),
             title_bar: TitleBar::default(),
@@ -307,14 +303,10 @@ mod imp {
         darwin_base_installed: Cell<bool>,
         #[property(get, set)]
         newer_darwin_base: RefCell<String>,
-        #[property(get, set)]
-        newer_quadra_rosemary: RefCell<String>,
         #[property(get, set, builder(Renderer::default()))]
         renderer: Cell<Renderer>,
         #[property(get, set)]
         mangohud: Cell<bool>,
-        #[property(get, set)]
-        refresh_rate: Cell<u32>,
         #[property(get, set, builder(PresentationMode::default()))]
         presentation_mode: Cell<PresentationMode>,
         #[property(get, set, builder(SwapInterval::default()))]
@@ -483,7 +475,6 @@ impl AppState {
             )
             .property("renderer", renderer)
             .property("mangohud", settings.mangohud)
-            .property("refresh-rate", settings.refresh_rate)
             .property("presentation-mode", settings.presentation_mode)
             .property("opengl-swap-interval", settings.opengl_swap_interval)
             .property("title-bar", settings.title_bar)
@@ -705,7 +696,6 @@ impl AppState {
             legacy_force_opengl: false,
             renderer: Some(self.renderer()),
             mangohud: self.mangohud(),
-            refresh_rate: self.refresh_rate(),
             presentation_mode: self.presentation_mode(),
             opengl_swap_interval: self.opengl_swap_interval(),
             title_bar: self.title_bar(),
@@ -992,8 +982,9 @@ mod tests {
     #[test]
     fn ignores_settings_it_does_not_know_about() {
         let (settings, problem) =
-            parse_settings("mangohud = true\nsetting_from_a_newer_quadra = 1\n");
+            parse_settings("mangohud = true\nrefresh_rate = 144\nunknown_setting = 1\n");
         assert!(problem.is_none());
         assert!(settings.mangohud);
+        assert!(!toml::to_string(&settings).unwrap().contains("refresh_rate"));
     }
 }

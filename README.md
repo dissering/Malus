@@ -6,6 +6,8 @@ Roblox Player and Studio on Linux through Rosemary. Forked from [Quadra](https:/
 
 ## Install
 
+Download the package for your x86-64 Linux distribution. Release packages include Rosemary and download Roblox on first launch. [GitHub Releases](https://github.com/dissering/Malus/releases/latest)
+
 Build on x86-64 Linux with stable Rust, a C compiler, pkg-config, and development headers for GTK 4.18+ and libadwaita 1.7+. Clang is optional for VR.
 
 ```sh
@@ -14,7 +16,7 @@ cd Malus
 ./install.sh
 ```
 
-Open Malus from the app menu. The first launch downloads Roblox and Rosemary. See [Linux packages](packaging/README.md) for Flatpak, Arch, Fedora, and Ubuntu build instructions.
+Open Malus from the app menu. Source installs download the same verified Rosemary build on first launch. [Linux package build instructions](packaging/README.md)
 
 ## Commands
 
@@ -38,7 +40,7 @@ malus help
 - **General → Discord** controls Rich Presence, which is enabled for new setups. Edit the activity text, hide the timer or link, or turn off BloxstrapRPC overrides. Use `{game}` in either text field for the experience name.
 - **General → Updates** checks GitHub. Portable builds and AppImages can update automatically when Roblox and Studio are closed. Update installed packages through your package manager.
 
-On compatible Rosemary builds, Malus targets 15 FPS while the Player is minimized. Set `ROSEMARY_MINIMIZED_FPS` in Advanced to change the limit or use `0` to disable it. The bundled Rosemary 0.5.0-quadra.3 does not support this setting.
+The bundled Rosemary targets 15 FPS while Roblox Player is minimized and resumes normal rendering when restored. On Wayland, the compositor must report the window as suspended or occluded. Set `ROSEMARY_MINIMIZED_FPS` in Advanced to change the limit or use `0` to disable it.
 
 Open the game log with `malus logs`.
 

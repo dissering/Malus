@@ -10,7 +10,7 @@ const COPY_RESPONSE: &str = "copy";
 const CLOSE_RESPONSE: &str = "close";
 
 pub fn mangohud_row(state: &AppState) -> adw::SwitchRow {
-    let row = switch_row(state, "mangohud", "MangoHud");
+    let row = switch_row(state, "mangohud", "Performance overlay");
     row.set_subtitle("Show an overlay with the frame rate, frame times and GPU usage");
 
     row.connect_active_notify(|row| {
@@ -29,7 +29,7 @@ fn show_flatpak_install_dialog(row: &adw::SwitchRow) {
         .heading("Install MangoHud for Flatpak")
         .body(format!(
             "Malus runs as a Flatpak, so it can't use the MangoHud installed on your system. \
-             Install the MangoHud Flatpak extension, then restart Quadra:\n\n{FLATPAK_INSTALL_COMMAND}"
+             Install the MangoHud Flatpak extension, then restart Malus:\n\n{FLATPAK_INSTALL_COMMAND}"
         ))
         .build();
     dialog.add_response(CLOSE_RESPONSE, "Close");
