@@ -9,6 +9,6 @@
   stroke-linecap="round"
   stroke-linejoin="round"
 >
-  <path d="M12 19h8" />
-  <path d="m4 17 6-6-6-6" />
+  <path class="transparent-fill foreground-stroke" style="fill:none;stroke:#2e3436" d="M12 19h8" />
+  <path class="transparent-fill foreground-stroke" style="fill:none;stroke:#2e3436" d="m4 17 6-6-6-6" />
 </svg>
