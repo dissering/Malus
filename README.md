@@ -14,7 +14,7 @@ cd Tiltframe
 bash install.sh
 ```
 
-Open **Tiltframe** from your app menu or run `~/.local/bin/tiltframe`. On first use, the launcher downloads the game client and its runtime. Tiltframe uses its own XDG directories, so you can install it alongside Quadra.
+Open **Tiltframe** from your app menu or run `~/.local/bin/tiltframe`. On first use, the launcher downloads the game client and its runtime. Tiltframe uses its own XDG directories, so you can install it alongside Quadra. The managed Player bundle is `tiltframe/roblox/RobloxPlayer.app` under your XDG data directory. If both bundle names are present, Tiltframe moves the older `Roblox.app` to `tiltframe/legacy-roblox/` once the active Player installation is valid.
 
 ## Command line
 

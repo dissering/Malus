@@ -73,6 +73,7 @@ pub fn initialize(state: &AppState) {
     state.connect_notify_local(Some("prefix"), |state, _| account::refresh(state));
     quadra_rosemary::look_for_update(state);
     fast_flag_allowlist::initialize();
+    roblox::archive_old_player_bundle();
     fast_flags::initialize(state);
     discord_presence::initialize(state);
     server_history::initialize(state);
