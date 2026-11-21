@@ -3,6 +3,7 @@ mod crash_guard;
 mod cursor_presets;
 mod custom_font;
 mod folder_overlay;
+pub(super) mod packs;
 mod settings;
 mod sound_presets;
 
@@ -51,7 +52,9 @@ pub fn prepare(settings: &ModSettings) -> anyhow::Result<()> {
             folder_overlay::apply(&mut files, &paths::mods_directory()),
         );
     }
+    let packs_applied = packs::apply(&mut files, &settings.disabled_mod_packs);
     files.finish().context("Couldn't record the applied mods")?;
+    packs_applied?;
 
     crash_guard::begin_session(&paths::mods_directory());
     Ok(())

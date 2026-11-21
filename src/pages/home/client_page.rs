@@ -7,10 +7,10 @@ use crate::state::{AppState, Client};
 use adw::prelude::*;
 
 pub fn client_page(state: &AppState, client: Client) -> gtk::Widget {
-    let logo = app_icon(88);
+    let logo = app_icon(72);
 
     let title = gtk::Label::builder()
-        .label(client.home_title())
+        .label(client.name())
         .css_classes(["title-1"])
         .build();
 
@@ -18,14 +18,14 @@ pub fn client_page(state: &AppState, client: Client) -> gtk::Widget {
 
     let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     actions.set_halign(gtk::Align::Center);
-    actions.set_margin_top(12);
+    actions.set_margin_top(10);
     actions.append(&play_button(state, client));
     actions.append(&logs_button(state));
 
     let content = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
-        .spacing(12)
-        .width_request(300)
+        .spacing(9)
+        .width_request(290)
         .margin_top(16)
         .margin_bottom(24)
         .margin_start(16)

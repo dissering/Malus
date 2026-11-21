@@ -71,13 +71,11 @@ fn remember_join(state: &AppState, place_id: u64, job_id: String, server_address
 fn fetch_game_name(state: &AppState, place_id: u64) {
     let state = state.clone();
     run_quietly(
-        move || game_details::fetch(place_id),
-        move |details| match details {
-            Ok(details) => save(
+        move || game_details::name_for_place(place_id),
+        move |name| match name {
+            Ok(name) => save(
                 &state,
-                state
-                    .server_history()
-                    .with_game_name(place_id, &details.name),
+                state.server_history().with_game_name(place_id, &name),
             ),
             Err(error) => eprintln!("Couldn't get the name of place {place_id}: {error:#}"),
         },

@@ -16,6 +16,7 @@ mod mangohud;
 mod mods;
 mod network;
 mod privacy;
+mod profiles;
 mod rosemary_options;
 mod rosemary_runtime;
 mod runtime;
@@ -45,6 +46,12 @@ pub fn settings_page(state: &AppState) -> gtk::Widget {
         Some("general"),
         "General",
         "tiltframe-settings-symbolic",
+    );
+    stack.add_titled_with_icon(
+        &scrollable(&profiles::profiles_section(state)),
+        Some("profiles"),
+        "Profiles",
+        "tiltframe-sliders-horizontal-symbolic",
     );
     let fast_flags = stack.add_titled_with_icon(
         &scrollable(&fast_flags::fast_flags_section(state)),

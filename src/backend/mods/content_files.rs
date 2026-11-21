@@ -50,6 +50,23 @@ impl ContentFiles {
         fs::copy(source, target).map(drop)
     }
 
+    pub fn place_pack_asset(&mut self, relative: &Path, source: &Path) -> io::Result<()> {
+        let mut target = self.content.clone();
+        for component in relative.components() {
+            target.push(component);
+            match fs::symlink_metadata(&target) {
+                Ok(info) if info.is_symlink() => {
+                    return Err(io::Error::other(
+                        "A path in the Roblox bundle is a symbolic link.",
+                    ));
+                }
+                Err(error) if error.kind() != io::ErrorKind::NotFound => return Err(error),
+                _ => {}
+            }
+        }
+        self.place_file(relative, source)
+    }
+
     pub fn remove(&mut self, relative: &Path) -> io::Result<()> {
         if !self.exists(relative) {
             return Ok(());

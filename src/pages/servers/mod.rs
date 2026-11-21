@@ -2,6 +2,7 @@ mod history_group;
 mod join_availability;
 mod join_by_link_row;
 mod place_link;
+mod previews;
 mod region_row;
 mod time_since;
 
@@ -10,7 +11,7 @@ use crate::state::AppState;
 use crate::utils::{scrollable, unfocus_on_outside_click};
 use adw::prelude::*;
 use gtk::glib;
-use history_group::history_groups;
+use history_group::library_groups;
 use join_availability::JoinAvailability;
 use join_by_link_row::join_by_link_row;
 use region_row::preferred_region_row;
@@ -19,11 +20,10 @@ pub fn servers_page(state: &AppState) -> gtk::Widget {
     let join_availability = JoinAvailability::follow(state);
 
     let joining_group = adw::PreferencesGroup::builder()
-        .title("Joining")
+        .title("Join an experience")
         .description(
-            "With a preferred region, games started from this page join a server there, \
-             picked from RoValra's server list (apis.rovalra.com). RoValra sees the game and \
-             the region, not your account.",
+            "Play uses your preferred region when available. Region lookup sends the place ID \
+             and preferred region to RoValra (apis.rovalra.com).",
         )
         .build();
     joining_group.add(&preferred_region_row(state));
@@ -36,7 +36,7 @@ pub fn servers_page(state: &AppState) -> gtk::Widget {
         .margin_bottom(12)
         .build();
     content.append(&joining_group);
-    for group in history_groups(state, &join_availability) {
+    for group in library_groups(state, &join_availability) {
         content.append(&group);
     }
 

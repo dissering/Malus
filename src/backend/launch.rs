@@ -62,6 +62,9 @@ pub fn start_roblox(
         command.args([PROTOCOL_STRING_ARGUMENT, launch_uri]);
     }
     command.envs(rosemary_environment(state, vr_session));
+    if let Some(size) = state.window_size().resolution() {
+        command.env("ROSEMARY_WINDOW_SIZE", size);
+    }
 
     run(state, Client::Player, runner, command, vr.map(vr_log_line))
 }
@@ -148,7 +151,7 @@ fn report_mods_set_aside(state: &AppState, crashed: bool) {
     let set_aside = mods::finish_session(crashed);
     if !set_aside.is_empty() {
         state.report_error(&format!(
-            "Roblox crashed soon after starting with new mods, so Quadra set them aside: {}. \
+            "Roblox crashed soon after starting with new mods, so Malus set them aside: {}. \
              You can turn them back on in Settings.",
             set_aside.join(", ")
         ));

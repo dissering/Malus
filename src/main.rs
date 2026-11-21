@@ -16,8 +16,6 @@ use std::rc::Rc;
 const APP_ID: &str = "io.github.dissering.Tiltframe";
 
 fn main() -> glib::ExitCode {
-    use command_line::Command;
-
     let args = match command_line::normalized_arguments(std::env::args().collect()) {
         Ok(args) => args,
         Err(error) => {
@@ -56,17 +54,22 @@ fn main() -> glib::ExitCode {
     app.connect_command_line(glib::clone!(
         #[strong]
         quadra,
-        move |_, command_line| {
-            if let Some(quadra) = quadra.get() {
-                match command_line::requested_by(command_line) {
-                    Command::Launch(request) => quadra.launch_directly(request),
-                    Command::Activate => quadra.activate(),
-                    Command::Menu => quadra.open_menu(),
-                    Command::Settings => quadra.open_settings(),
-                    Command::Logs => quadra.open_logs(),
+        move |app, command_line| {
+            let Some(quadra) = quadra.get() else {
+                return glib::ExitCode::FAILURE;
+            };
+            match command_line::requested_by(command_line)
+                .and_then(|command| quadra.run_command(command))
+            {
+                Ok(()) => glib::ExitCode::SUCCESS,
+                Err(error) => {
+                    command_line::report_failure(command_line, &error);
+                    if !command_line.is_remote() {
+                        app.quit();
+                    }
+                    glib::ExitCode::FAILURE
                 }
             }
-            glib::ExitCode::SUCCESS
         }
     ));
 

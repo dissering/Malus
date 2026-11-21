@@ -15,7 +15,9 @@ pub use fast_flags::{FastFlagValue, FastFlags};
 pub use launch_mode::LaunchMode;
 pub use mods::{CursorStyle, DeathSound};
 pub use regions::{Region, Regions, country_and_city_of};
-pub use rosemary_options::{CommandKey, PresentationMode, Renderer, SwapInterval, TitleBar};
+pub use rosemary_options::{
+    CommandKey, PresentationMode, Renderer, SwapInterval, TitleBar, WindowSize,
+};
 pub use server_history::{JoinedServer, PlayedGame, ServerHistory};
 
 use std::error::Error;
@@ -42,11 +44,16 @@ pub const QUADRA_PREFIX: &str = "Malus";
 pub const ROSEMARY_DEFAULT_PREFIX: &str = "Rosemary default";
 
 const SAVE_DELAY_AFTER_LAST_CHANGE: Duration = Duration::from_millis(500);
-const SAVED_PROPERTIES: [&str; 43] = [
+const SAVED_PROPERTIES: [&str; 49] = [
     "launch-mode",
     "run-in-background",
     "discord-rich-presence",
     "allow-game-presence",
+    "discord-details-text",
+    "discord-state-text",
+    "discord-show-elapsed",
+    "discord-show-game-page",
+    "window-size",
     "runtime",
     "runner",
     "custom-runner-path",
@@ -76,6 +83,7 @@ const SAVED_PROPERTIES: [&str; 43] = [
     "custom-cursor",
     "custom-font",
     "custom-mods",
+    "disabled-mod-packs",
     "hide-launcher-while-playing",
     "open-after-exit",
     "show-playtime",
@@ -141,6 +149,13 @@ struct SavedSettings {
     run_in_background: bool,
     discord_rich_presence: bool,
     allow_game_presence: bool,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    discord_details_text: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    discord_state_text: String,
+    discord_show_elapsed: bool,
+    discord_show_game_page: bool,
+    window_size: WindowSize,
     runtime: Runtime,
     runner: String,
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -180,6 +195,8 @@ struct SavedSettings {
     #[serde(skip_serializing_if = "String::is_empty")]
     custom_font: String,
     custom_mods: bool,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    disabled_mod_packs: Vec<String>,
     hide_launcher_while_playing: bool,
     open_after_exit: bool,
     show_playtime: bool,
@@ -199,6 +216,11 @@ impl Default for SavedSettings {
             run_in_background: false,
             discord_rich_presence: false,
             allow_game_presence: true,
+            discord_details_text: String::new(),
+            discord_state_text: String::new(),
+            discord_show_elapsed: true,
+            discord_show_game_page: true,
+            window_size: WindowSize::default(),
             runtime: Runtime::default(),
             runner: QUADRA_RUNNER.to_owned(),
             custom_runner_path: String::new(),
@@ -230,6 +252,7 @@ impl Default for SavedSettings {
             custom_cursor: String::new(),
             custom_font: String::new(),
             custom_mods: true,
+            disabled_mod_packs: Vec::new(),
             hide_launcher_while_playing: false,
             open_after_exit: false,
             show_playtime: true,
@@ -274,6 +297,16 @@ mod imp {
         discord_rich_presence: Cell<bool>,
         #[property(get, set)]
         allow_game_presence: Cell<bool>,
+        #[property(get, set)]
+        discord_details_text: RefCell<String>,
+        #[property(get, set)]
+        discord_state_text: RefCell<String>,
+        #[property(get, set)]
+        discord_show_elapsed: Cell<bool>,
+        #[property(get, set)]
+        discord_show_game_page: Cell<bool>,
+        #[property(get, set, builder(WindowSize::default()))]
+        window_size: Cell<WindowSize>,
         #[property(get, set, builder(Runtime::default()))]
         runtime: Cell<Runtime>,
         #[property(get, set)]
@@ -346,6 +379,8 @@ mod imp {
         custom_font: RefCell<String>,
         #[property(get, set)]
         custom_mods: Cell<bool>,
+        #[property(get, set)]
+        disabled_mod_packs: RefCell<Vec<String>>,
         #[property(get, set)]
         hide_launcher_while_playing: Cell<bool>,
         #[property(get, set)]
@@ -449,6 +484,11 @@ impl AppState {
             .property("run-in-background", settings.run_in_background)
             .property("discord-rich-presence", settings.discord_rich_presence)
             .property("allow-game-presence", settings.allow_game_presence)
+            .property("discord-details-text", settings.discord_details_text)
+            .property("discord-state-text", settings.discord_state_text)
+            .property("discord-show-elapsed", settings.discord_show_elapsed)
+            .property("discord-show-game-page", settings.discord_show_game_page)
+            .property("window-size", settings.window_size)
             .property("runtime", settings.runtime)
             .property("runner", settings.runner)
             .property("custom-runner-path", settings.custom_runner_path)
@@ -488,6 +528,7 @@ impl AppState {
             .property("custom-cursor", settings.custom_cursor)
             .property("custom-font", settings.custom_font)
             .property("custom-mods", settings.custom_mods)
+            .property("disabled-mod-packs", settings.disabled_mod_packs)
             .property(
                 "hide-launcher-while-playing",
                 settings.hide_launcher_while_playing,
@@ -669,6 +710,11 @@ impl AppState {
             run_in_background: self.run_in_background(),
             discord_rich_presence: self.discord_rich_presence(),
             allow_game_presence: self.allow_game_presence(),
+            discord_details_text: self.discord_details_text(),
+            discord_state_text: self.discord_state_text(),
+            discord_show_elapsed: self.discord_show_elapsed(),
+            discord_show_game_page: self.discord_show_game_page(),
+            window_size: self.window_size(),
             runtime: self.runtime(),
             runner: self.runner(),
             custom_runner_path: self.custom_runner_path(),
@@ -700,6 +746,7 @@ impl AppState {
             custom_cursor: self.custom_cursor(),
             custom_font: self.custom_font(),
             custom_mods: self.custom_mods(),
+            disabled_mod_packs: self.disabled_mod_packs(),
             hide_launcher_while_playing: self.hide_launcher_while_playing(),
             open_after_exit: self.open_after_exit(),
             show_playtime: self.show_playtime(),

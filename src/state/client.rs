@@ -37,11 +37,4 @@ impl Client {
             .into_iter()
             .find(|client| client.page_name() == page_name)
     }
-
-    pub fn home_title(self) -> &'static str {
-        match self {
-            Self::Player => "Malus",
-            Self::Studio => "Malus Studio",
-        }
-    }
 }

@@ -1,4 +1,5 @@
-use crate::backend::{self, LaunchRequest};
+use crate::backend::{self, LaunchRequest, launch_profiles};
+use crate::command_line::Command;
 use crate::components::close_roblox_dialog::confirm_closing_roblox;
 use crate::components::error_dialog::show_errors_from;
 use crate::components::grid_backdrop::grid_backdrop;
@@ -14,6 +15,7 @@ use crate::pages::settings::settings_page;
 use crate::state::{AppState, LaunchMode};
 use crate::utils::show_only_while_roblox_is_selected;
 use adw::{Application, ApplicationWindow, ToolbarView, ViewStack, prelude::*};
+use anyhow::Context;
 use gtk::glib;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -113,6 +115,35 @@ impl Quadra {
         } else {
             self.show(Page::Home);
         }
+    }
+
+    pub fn run_command(&self, command: Command) -> anyhow::Result<()> {
+        match command {
+            Command::Launch { request, profile } => {
+                if let Some(profile) = profile {
+                    launch_profiles::apply(&profile, &self.state)?;
+                }
+                self.launch_directly(request);
+            }
+            Command::Rejoin => {
+                let history = self.state.server_history();
+                let link = history
+                    .0
+                    .iter()
+                    .find_map(|game| {
+                        game.servers
+                            .first()
+                            .map(|server| backend::game_uri(game.place_id, Some(&server.job_id)))
+                    })
+                    .context("No recent Roblox server yet. Join an experience first.")?;
+                self.launch_directly(LaunchRequest::Roblox { link: Some(link) });
+            }
+            Command::Activate => self.activate(),
+            Command::Menu => self.open_menu(),
+            Command::Settings => self.open_settings(),
+            Command::Logs => self.open_logs(),
+        }
+        Ok(())
     }
 
     pub fn launch_directly(&self, request: LaunchRequest) {
@@ -265,7 +296,7 @@ fn pages(state: &AppState) -> ViewStack {
     let servers = pages.add_titled_with_icon(
         &servers_page(state),
         Some(Page::Servers.name()),
-        "Servers",
+        "Library",
         "tiltframe-server-symbolic",
     );
     show_only_while_roblox_is_selected(&servers, state);

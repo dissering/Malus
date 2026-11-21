@@ -12,16 +12,13 @@ pub fn general_section(state: &AppState) -> gtk::Box {
     let group = adw::PreferencesGroup::builder().title("Malus").build();
 
     let launch_mode_row = choice_row::<LaunchMode>(state, "launch-mode", "When Malus starts");
-    launch_mode_row.set_subtitle("Settings stay available from the system tray");
 
     let run_in_background_row = switch_row(state, "run-in-background", "Run in the background");
     run_in_background_row.set_subtitle("Keep Malus in the system tray after its window closes");
 
     let theme_row = choice_row::<Theme>(state, "theme", "App theme");
-    theme_row.set_subtitle("Change the theme to what you like.");
 
     let advanced_row = switch_row(state, "advanced-settings-visible", "Advanced settings");
-    advanced_row.set_subtitle("Only enable if you know what you're doing.");
 
     group.add(&launcher_version_row());
     group.add(&launch_mode_row);
@@ -45,11 +42,32 @@ pub fn general_section(state: &AppState) -> gtk::Box {
     game_presence_row.set_subtitle(
         "Let experiences customize Discord text, timers, and images through BloxstrapRPC",
     );
+    let activity = adw::ExpanderRow::builder()
+        .title("Activity settings")
+        .subtitle("Choose what appears on your profile")
+        .build();
+    activity.add_row(&game_presence_row);
+    activity.add_row(&discord_text_row(
+        state,
+        "discord-details-text",
+        "Activity title",
+    ));
+    activity.add_row(&discord_text_row(
+        state,
+        "discord-state-text",
+        "Activity status",
+    ));
+    activity.add_row(&switch_row(state, "discord-show-elapsed", "Show the timer"));
+    activity.add_row(&switch_row(
+        state,
+        "discord-show-game-page",
+        "Show the Roblox game link",
+    ));
     state
-        .bind_property("discord-rich-presence", &game_presence_row, "sensitive")
+        .bind_property("discord-rich-presence", &activity, "sensitive")
         .sync_create()
         .build();
-    discord_group.add(&game_presence_row);
+    discord_group.add(&activity);
 
     let section = gtk::Box::new(gtk::Orientation::Vertical, 12);
     section.append(&group);
@@ -62,4 +80,24 @@ pub fn general_section(state: &AppState) -> gtk::Box {
     section.append(&support_group(state));
 
     section
+}
+
+fn discord_text_row(state: &AppState, property: &str, title: &str) -> adw::ActionRow {
+    let entry = gtk::Entry::builder()
+        .max_length(128)
+        .valign(gtk::Align::Center)
+        .placeholder_text("Default")
+        .build();
+    let row = adw::ActionRow::builder()
+        .title(title)
+        .subtitle("Use {game} for the experience name")
+        .activatable_widget(&entry)
+        .build();
+    row.add_suffix(&entry);
+    state
+        .bind_property(property, &entry, "text")
+        .bidirectional()
+        .sync_create()
+        .build();
+    row
 }

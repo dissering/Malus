@@ -11,13 +11,17 @@ use std::rc::Rc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const DISCORD_CLIENT_ID: &str = "363445589247131668";
-const QUADRA_ICON_URL: &str = "https://raw.githubusercontent.com/dissering/Tiltframe/tiltframe/data/icons/hicolor/512x512/apps/io.github.dissering.Tiltframe.png";
+const QUADRA_ICON_URL: &str = "https://raw.githubusercontent.com/dissering/Malus/tiltframe/data/icons/hicolor/512x512/apps/io.github.dissering.Tiltframe.png";
 const QUADRA_ICON_TEXT: &str = "Malus";
 const REFRESH_GAME_DETAILS_EVERY: Duration = Duration::from_secs(60);
 const SHORTEST_TIME_BETWEEN_RPC_UPDATES: Duration = Duration::from_secs(1);
 const WAIT_FOR_JOIN_REPORT: Duration = Duration::from_secs(10);
-const PROPERTIES_THAT_DECIDE_PRESENCE: [&str; 3] =
-    ["running", "discord-rich-presence", "allow-game-presence"];
+const PRESENCE_CUSTOMIZATIONS: [&str; 4] = [
+    "discord-details-text",
+    "discord-state-text",
+    "discord-show-elapsed",
+    "discord-show-game-page",
+];
 const SHORTEST_DISCORD_TEXT: usize = 2;
 const LONGEST_DISCORD_TEXT: usize = 128;
 const INVISIBLE_PADDING: char = '\u{2800}';
@@ -71,14 +75,21 @@ pub fn initialize(state: &AppState) {
         }
     ));
 
-    state.connect_properties_notify(&PROPERTIES_THAT_DECIDE_PRESENCE, move |state| {
-        if !state.allow_game_presence() {
-            clear_overrides(&mut presence.borrow_mut());
-        }
-        follow_roblox(state, &presence);
-        fetch_missing_assets(state, &presence);
-        show(state, &presence);
+    state.connect_properties_notify(&PRESENCE_CUSTOMIZATIONS, {
+        let presence = presence.clone();
+        move |state| show(state, &presence)
     });
+    state.connect_properties_notify(
+        &["running", "discord-rich-presence", "allow-game-presence"],
+        move |state| {
+            if !state.allow_game_presence() {
+                clear_overrides(&mut presence.borrow_mut());
+            }
+            follow_roblox(state, &presence);
+            fetch_missing_assets(state, &presence);
+            show(state, &presence);
+        },
+    );
 }
 
 fn follow_roblox(state: &AppState, presence: &SharedPresence) {
@@ -340,9 +351,17 @@ fn fetch_details(state: &AppState, presence: &SharedPresence, place_id: u64) {
 fn show(state: &AppState, presence: &SharedPresence) {
     let mut presence = presence.borrow_mut();
     let wants_presence = state.discord_rich_presence() && state.running();
-    let rich_presence = wants_presence.then(|| match &presence.game {
-        Some(game) => playing_presence(game, &presence.asset_urls),
-        None => idle_presence(presence.roblox_started_at),
+    let rich_presence = wants_presence.then(|| {
+        let (activity, game_name) = match &presence.game {
+            Some(game) => (
+                playing_presence(game, &presence.asset_urls),
+                game.details
+                    .as_ref()
+                    .map_or("Roblox", |details| details.name.as_str()),
+            ),
+            None => (idle_presence(presence.roblox_started_at), "Roblox"),
+        };
+        customize_presence(state, activity, game_name)
     });
 
     if presence.shown_presence == rich_presence {
@@ -353,6 +372,34 @@ fn show(state: &AppState, presence: &SharedPresence) {
         .discord
         .get_or_insert_with(|| DiscordClient::start(DISCORD_CLIENT_ID))
         .show(rich_presence);
+}
+
+fn customize_presence(
+    state: &AppState,
+    mut activity: RichPresence,
+    game_name: &str,
+) -> RichPresence {
+    let details = state.discord_details_text();
+    let status = state.discord_state_text();
+    if !details.trim().is_empty() {
+        activity.details = presence_text(&details, game_name);
+    }
+    if !status.trim().is_empty() {
+        activity.state = Some(presence_text(&status, game_name));
+    }
+    if !state.discord_show_elapsed() {
+        activity.started_at = None;
+        activity.ended_at = None;
+    }
+    if !state.discord_show_game_page() {
+        activity.link = None;
+    }
+    activity
+}
+
+fn presence_text(setting: &str, game_name: &str) -> String {
+    let bounded: String = setting.trim().chars().take(LONGEST_DISCORD_TEXT).collect();
+    discord_text(&bounded.replace("{game}", game_name))
 }
 
 fn idle_presence(roblox_started_at: Option<i64>) -> RichPresence {
@@ -460,6 +507,26 @@ fn now_in_seconds() -> i64 {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn user_activity_text_and_privacy_take_precedence_over_game_values() {
+        let state = glib::Object::builder::<AppState>()
+            .property("discord-details-text", " Playing {game} ")
+            .property("discord-state-text", " On Linux ")
+            .build();
+        let mut input = idle_presence(Some(10));
+        input.ended_at = Some(20);
+        input.link = Some(Link {
+            label: String::from("Open"),
+            url: String::from("https://www.roblox.com/games/123"),
+        });
+        let output = customize_presence(&state, input, "Example");
+        assert_eq!(output.details, "Playing Example");
+        assert_eq!(output.state.as_deref(), Some("On Linux"));
+        assert_eq!(output.started_at, None);
+        assert_eq!(output.ended_at, None);
+        assert!(output.link.is_none());
+    }
+
     use super::*;
     use crate::backend::bloxstrap_rpc::presence_update_in;
     #[test]

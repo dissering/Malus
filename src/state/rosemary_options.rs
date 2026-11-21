@@ -125,3 +125,47 @@ impl Choice for CommandKey {
         }
     }
 }
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, glib::Enum, Serialize, Deserialize)]
+#[enum_type(name = "MalusWindowSize")]
+#[serde(rename_all = "snake_case")]
+pub enum WindowSize {
+    #[default]
+    Default,
+    P720,
+    P900,
+    P1080,
+    P1440,
+}
+
+impl WindowSize {
+    pub fn resolution(self) -> Option<&'static str> {
+        match self {
+            Self::Default => None,
+            Self::P720 => Some("1280x720"),
+            Self::P900 => Some("1600x900"),
+            Self::P1080 => Some("1920x1080"),
+            Self::P1440 => Some("2560x1440"),
+        }
+    }
+}
+
+impl Choice for WindowSize {
+    const ALL: &'static [Self] = &[
+        Self::Default,
+        Self::P720,
+        Self::P900,
+        Self::P1080,
+        Self::P1440,
+    ];
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::Default => "Roblox default",
+            Self::P720 => "1280 × 720",
+            Self::P900 => "1600 × 900",
+            Self::P1080 => "1920 × 1080",
+            Self::P1440 => "2560 × 1440",
+        }
+    }
+}
