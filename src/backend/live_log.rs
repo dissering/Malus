@@ -1,14 +1,28 @@
 use crate::state::{AppState, Client};
-use gtk::glib;
+use gtk::{gio, glib, prelude::*};
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError, SyncSender};
 use std::time::Duration;
 
 const CHECK_FOR_NEW_OUTPUT_EVERY: Duration = Duration::from_millis(200);
 const READ_CHUNK_SIZE: usize = 8192;
 const LOG_QUEUE_CAPACITY: usize = 8;
+
+pub struct LogCompletion {
+    writer_finished: Arc<AtomicBool>,
+    changes: SyncSender<()>,
+}
+
+impl LogCompletion {
+    pub fn finish(self) {
+        self.writer_finished.store(true, Ordering::Release);
+        let _ = self.changes.try_send(());
+    }
+}
 
 fn started_marker(client: Client) -> &'static str {
     match client {
@@ -17,14 +31,24 @@ fn started_marker(client: Client) -> &'static str {
     }
 }
 
-pub fn follow(state: &AppState, log: File, writer_finished: Arc<AtomicBool>) {
+pub fn follow(state: &AppState, path: &Path, log: File) -> (LogCompletion, glib::JoinHandle<()>) {
     state.clear_log();
 
+    let writer_finished = Arc::new(AtomicBool::new(false));
+    let (changes, notifications) = mpsc::sync_channel(1);
+    let monitor = watch_log(path, changes.clone());
+    let completion = LogCompletion {
+        writer_finished: writer_finished.clone(),
+        changes,
+    };
     let (output_sender, output_receiver) = async_channel::bounded(LOG_QUEUE_CAPACITY);
-    std::thread::spawn(move || read_until_writer_finishes(log, &writer_finished, &output_sender));
+    std::thread::spawn(move || {
+        read_until_writer_finishes(log, &writer_finished, &notifications, &output_sender)
+    });
 
     let state = state.clone();
-    glib::spawn_future_local(async move {
+    let drain = glib::spawn_future_local(async move {
+        let _monitor = monitor;
         while let Ok(mut output) = output_receiver.recv().await {
             let mut batch_size = 1;
             while batch_size < LOG_QUEUE_CAPACITY {
@@ -45,11 +69,24 @@ pub fn follow(state: &AppState, log: File, writer_finished: Arc<AtomicBool>) {
             }
         }
     });
+    (completion, drain)
+}
+
+fn watch_log(path: &Path, changes: SyncSender<()>) -> Option<gio::FileMonitor> {
+    let monitor = gio::File::for_path(path)
+        .monitor_file(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
+        .ok()?;
+    monitor.set_rate_limit(0);
+    monitor.connect_changed(move |_, _, _, _| {
+        let _ = changes.try_send(());
+    });
+    Some(monitor)
 }
 
 fn read_until_writer_finishes(
     mut log: File,
     writer_finished: &AtomicBool,
+    notifications: &Receiver<()>,
     output_sender: &async_channel::Sender<String>,
 ) {
     let mut unfinished_line = Vec::new();
@@ -69,7 +106,11 @@ fn read_until_writer_finishes(
             if writer_had_finished {
                 break;
             }
-            std::thread::sleep(CHECK_FOR_NEW_OUTPUT_EVERY);
+            if let Err(RecvTimeoutError::Disconnected) =
+                notifications.recv_timeout(CHECK_FOR_NEW_OUTPUT_EVERY)
+            {
+                break;
+            }
             continue;
         }
 

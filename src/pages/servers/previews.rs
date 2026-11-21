@@ -56,7 +56,7 @@ impl Previews {
             .css_classes(["card"])
             .build();
         stack.add_named(
-            &gtk::Image::from_icon_name("image-x-generic-symbolic"),
+            &gtk::Image::from_icon_name("insert-image-symbolic"),
             Some("placeholder"),
         );
         stack.add_named(&picture, Some("thumbnail"));

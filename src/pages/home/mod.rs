@@ -1,8 +1,10 @@
 mod client_page;
 mod logs_button;
+mod open_place;
 mod play_button;
 mod playtime_label;
 mod status_label;
+mod studio_plugins;
 
 use crate::state::{AppState, Client};
 use adw::prelude::*;

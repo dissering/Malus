@@ -44,9 +44,10 @@ pub const QUADRA_PREFIX: &str = "Malus";
 pub const ROSEMARY_DEFAULT_PREFIX: &str = "Rosemary default";
 
 const SAVE_DELAY_AFTER_LAST_CHANGE: Duration = Duration::from_millis(500);
-const SAVED_PROPERTIES: [&str; 49] = [
+const SAVED_PROPERTIES: &[&str] = &[
     "launch-mode",
     "run-in-background",
+    "auto-update-launcher",
     "discord-rich-presence",
     "allow-game-presence",
     "discord-details-text",
@@ -92,7 +93,6 @@ const SAVED_PROPERTIES: [&str; 49] = [
     "cpu-core-limit",
     "block-telemetry",
     "force-raknet",
-    "theme",
     "advanced-settings-visible",
 ];
 const PROPERTIES_THAT_DECIDE_CAN_PLAY: [&str; 4] = [
@@ -120,33 +120,12 @@ impl Choice for Runtime {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, glib::Enum, Serialize, Deserialize)]
-#[enum_type(name = "QuadraTheme")]
-#[serde(rename_all = "lowercase")]
-pub enum Theme {
-    #[default]
-    Adwaita,
-    Grid,
-    Monochrome,
-}
-
-impl Choice for Theme {
-    const ALL: &'static [Self] = &[Self::Adwaita, Self::Grid, Self::Monochrome];
-
-    fn label(self) -> &'static str {
-        match self {
-            Self::Adwaita => "Adwaita",
-            Self::Grid => "Grid",
-            Self::Monochrome => "Monochrome",
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize)]
 #[serde(default)]
 struct SavedSettings {
     launch_mode: LaunchMode,
     run_in_background: bool,
+    auto_update_launcher: bool,
     discord_rich_presence: bool,
     allow_game_presence: bool,
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -205,7 +184,6 @@ struct SavedSettings {
     cpu_core_limit: u32,
     block_telemetry: bool,
     force_raknet: bool,
-    theme: Theme,
     advanced_settings_visible: bool,
 }
 
@@ -214,7 +192,8 @@ impl Default for SavedSettings {
         Self {
             launch_mode: LaunchMode::default(),
             run_in_background: false,
-            discord_rich_presence: false,
+            auto_update_launcher: true,
+            discord_rich_presence: true,
             allow_game_presence: true,
             discord_details_text: String::new(),
             discord_state_text: String::new(),
@@ -261,7 +240,6 @@ impl Default for SavedSettings {
             cpu_core_limit: 0,
             block_telemetry: false,
             force_raknet: false,
-            theme: Theme::default(),
             advanced_settings_visible: false,
         }
     }
@@ -293,6 +271,12 @@ mod imp {
         launch_mode: Cell<LaunchMode>,
         #[property(get, set)]
         run_in_background: Cell<bool>,
+        #[property(get, set)]
+        auto_update_launcher: Cell<bool>,
+        #[property(get, set)]
+        launcher_update_status: RefCell<String>,
+        #[property(get, set)]
+        launcher_update_checking: Cell<bool>,
         #[property(get, set)]
         discord_rich_presence: Cell<bool>,
         #[property(get, set)]
@@ -439,8 +423,6 @@ mod imp {
         pub can_open_studio: Cell<bool>,
         pub pending_save: RefCell<Option<glib::SourceId>>,
         pub log: RefCell<String>,
-        #[property(get, set, builder(Theme::default()))]
-        theme: Cell<Theme>,
     }
 
     #[glib::object_subclass]
@@ -482,6 +464,7 @@ impl AppState {
         let state: Self = glib::Object::builder()
             .property("launch-mode", settings.launch_mode)
             .property("run-in-background", settings.run_in_background)
+            .property("auto-update-launcher", settings.auto_update_launcher)
             .property("discord-rich-presence", settings.discord_rich_presence)
             .property("allow-game-presence", settings.allow_game_presence)
             .property("discord-details-text", settings.discord_details_text)
@@ -545,10 +528,9 @@ impl AppState {
                 settings.advanced_settings_visible,
             )
             .property("first-launch", !file_existed && !settings.opened_before)
-            .property("theme", settings.theme)
             .build();
 
-        state.connect_properties_notify(&SAVED_PROPERTIES, Self::schedule_save);
+        state.connect_properties_notify(SAVED_PROPERTIES, Self::schedule_save);
         state.follow_properties(&PROPERTIES_THAT_DECIDE_CAN_PLAY, Self::update_can_play);
         state.follow_properties(&["vr"], Self::use_opengl_while_in_vr);
 
@@ -708,6 +690,7 @@ impl AppState {
         let settings = SavedSettings {
             launch_mode: self.launch_mode(),
             run_in_background: self.run_in_background(),
+            auto_update_launcher: self.auto_update_launcher(),
             discord_rich_presence: self.discord_rich_presence(),
             allow_game_presence: self.allow_game_presence(),
             discord_details_text: self.discord_details_text(),
@@ -755,7 +738,6 @@ impl AppState {
             cpu_core_limit: self.cpu_core_limit(),
             block_telemetry: self.block_telemetry(),
             force_raknet: self.force_raknet(),
-            theme: self.theme(),
             advanced_settings_visible: self.advanced_settings_visible(),
         };
 
@@ -953,12 +935,15 @@ mod tests {
 
     #[test]
     fn reads_a_valid_settings_file() {
-        let (settings, problem) =
-            parse_settings("runner = \"Butter\"\nmangohud = true\nrenderer = \"opengl\"\n");
+        let (settings, problem) = parse_settings(
+            "runner = \"Butter\"\nmangohud = true\nrenderer = \"opengl\"\ndiscord_rich_presence = false\nauto_update_launcher = false\n",
+        );
         assert!(problem.is_none());
         assert_eq!(settings.runner, "Butter");
         assert!(settings.mangohud);
         assert_eq!(settings.renderer, Some(Renderer::OpenGl));
+        assert!(!settings.discord_rich_presence);
+        assert!(!settings.auto_update_launcher);
     }
 
     #[test]
@@ -967,7 +952,8 @@ mod tests {
         assert!(problem.is_none());
         assert_eq!(settings.runner, QUADRA_RUNNER);
         assert_eq!(settings.prefix, QUADRA_PREFIX);
-        assert!(!settings.discord_rich_presence);
+        assert!(settings.discord_rich_presence);
+        assert!(settings.auto_update_launcher);
         assert!(settings.vr_mirror);
         assert!(settings.show_menu_bar);
         assert_eq!(settings.vr_render_scale, DEFAULT_VR_RENDER_SCALE);

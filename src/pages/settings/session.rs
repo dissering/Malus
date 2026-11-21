@@ -23,7 +23,7 @@ pub fn session_group(state: &AppState) -> adw::PreferencesGroup {
     let raknet_row = switch_row(state, "force-raknet", "Force RakNet");
     raknet_row.set_subtitle(
         "Experimental. Patches Roblox to connect to servers over RakNet instead of RbxTransport. \
-         Only works on Roblox versions Quadra knows. Applies the next time Roblox starts",
+         Only works on supported Roblox versions. Applies the next time Roblox starts",
     );
 
     let group = adw::PreferencesGroup::builder()

@@ -11,7 +11,7 @@ use crate::state::{
 };
 use crate::utils::{find_in_path, is_executable_file};
 use anyhow::Context;
-use gtk::glib;
+use gtk::{gdk, glib, prelude::*};
 use std::cell::RefCell;
 use std::ffi::OsString;
 use std::fs::{self, File};
@@ -19,8 +19,6 @@ use std::io::{self, Write};
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 const LOG_FILE: &str = "roblox.log";
@@ -28,6 +26,7 @@ const FORCE_STOP_DELAY: Duration = Duration::from_secs(10);
 const PROTOCOL_STRING_ARGUMENT: &str = "-protocolString";
 const VULKAN_DRIVERS_VARIABLE: &str = "VK_DRIVER_FILES";
 const GIO_MODULES_VARIABLE: &str = "GIO_EXTRA_MODULES";
+const MINIMIZED_FPS_VARIABLE: &str = "ROSEMARY_MINIMIZED_FPS";
 
 struct RunningRoblox {
     process_group: i32,
@@ -60,6 +59,9 @@ pub fn start_roblox(
     command.arg(roblox::app_path(Client::Player));
     if let Some(launch_uri) = launch_uri {
         command.args([PROTOCOL_STRING_ARGUMENT, launch_uri]);
+    }
+    if vr_session.is_none() && std::env::var_os(MINIMIZED_FPS_VARIABLE).is_none() {
+        command.env(MINIMIZED_FPS_VARIABLE, "15");
     }
     command.envs(rosemary_environment(state, vr_session));
     if let Some(size) = state.window_size().resolution() {
@@ -119,19 +121,19 @@ fn run(
     state.set_running_client(client);
     state.set_running(true);
 
-    let roblox_exited = Arc::new(AtomicBool::new(false));
-    live_log::follow(state, log_reader, roblox_exited.clone());
+    let (log_completion, log_drained) = live_log::follow(state, &log_path, log_reader);
 
     let (exit_sender, exit_receiver) = async_channel::bounded(1);
     std::thread::spawn(move || {
         let exited_cleanly = child.wait().is_ok_and(|status| status.success());
-        roblox_exited.store(true, Ordering::Release);
+        log_completion.finish();
         let _ = exit_sender.send_blocking(exited_cleanly);
     });
 
     let state = state.clone();
     glib::spawn_future_local(async move {
         let exited_cleanly = exit_receiver.recv().await.unwrap_or(true);
+        let _ = log_drained.await;
         RUNNING_ROBLOX.replace(None);
         let crashed = !exited_cleanly && !state.stopping();
         if client == Client::Player {
@@ -286,10 +288,14 @@ fn rosemary_environment(state: &AppState, vr_session: Option<&VrSession>) -> Vec
         environment.push((telemetry::BLOCK_HOST_VARIABLE, telemetry::blocked_hosts()));
     }
 
-    environment.push((
-        "ROSEMARY_DECORATIONS",
-        decorations_value(state.title_bar()).to_owned(),
-    ));
+    let title_bar = state.title_bar();
+    let decorations = decorations_value(title_bar, || {
+        state.launch_wrapper().trim().is_empty() && compositor_has_system_decorations()
+    });
+    environment.push(("ROSEMARY_DECORATIONS", decorations.to_owned()));
+    if title_bar == TitleBar::Automatic && decorations == "server" {
+        environment.push(("SDL_VIDEO_WAYLAND_ALLOW_LIBDECOR", "0".to_owned()));
+    }
     if let Some(menu) = menu_value(state.show_menu_bar()) {
         environment.push(("ROSEMARY_MENU", menu.to_owned()));
     }
@@ -367,10 +373,42 @@ fn swap_interval_value(interval: SwapInterval) -> Option<&'static str> {
     }
 }
 
-fn decorations_value(title_bar: TitleBar) -> &'static str {
+fn decorations_value(title_bar: TitleBar, automatic: impl FnOnce() -> bool) -> &'static str {
     match title_bar {
+        TitleBar::Automatic if automatic() => "server",
+        TitleBar::Automatic => "client",
         TitleBar::MacStyle => "client",
         TitleBar::System => "server",
+    }
+}
+
+fn compositor_has_system_decorations() -> bool {
+    if std::env::var("SDL_VIDEODRIVER").as_deref() == Ok("x11") {
+        return true;
+    }
+    let wayland = gdk::Display::default().filter(|display| {
+        glib::Type::from_name("GdkWaylandDisplay").is_some_and(|kind| display.type_().is_a(kind))
+    });
+    let Some(wayland) = wayland else {
+        return ["WAYLAND_DISPLAY", "WAYLAND_SOCKET"]
+            .into_iter()
+            .all(|variable| std::env::var_os(variable).is_none());
+    };
+    let symbol = unsafe {
+        libc::dlsym(
+            libc::RTLD_DEFAULT,
+            c"gdk_wayland_display_query_registry".as_ptr(),
+        )
+    };
+    if symbol.is_null() {
+        return false;
+    }
+    unsafe {
+        let query_registry: unsafe extern "C" fn(
+            *mut gdk::ffi::GdkDisplay,
+            *const libc::c_char,
+        ) -> glib::ffi::gboolean = std::mem::transmute(symbol);
+        query_registry(wayland.as_ptr(), c"zxdg_decoration_manager_v1".as_ptr()) != 0
     }
 }
 

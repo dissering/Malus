@@ -1,11 +1,11 @@
 use super::account::account_group;
 use super::bound_rows::{choice_row, switch_row};
-use super::discord_access::ask_for_discord_access_when_turned_on;
+use super::discord_access::discord_access_row;
 use super::runtime::runtime_section;
 use super::session::session_group;
 use super::support::support_group;
-use super::updates::launcher_version_row;
-use crate::state::{AppState, LaunchMode, Theme};
+use super::updates::launcher_update_group;
+use crate::state::{AppState, LaunchMode};
 use adw::prelude::*;
 
 pub fn general_section(state: &AppState) -> gtk::Box {
@@ -16,24 +16,25 @@ pub fn general_section(state: &AppState) -> gtk::Box {
     let run_in_background_row = switch_row(state, "run-in-background", "Run in the background");
     run_in_background_row.set_subtitle("Keep Malus in the system tray after its window closes");
 
-    let theme_row = choice_row::<Theme>(state, "theme", "App theme");
-
     let advanced_row = switch_row(state, "advanced-settings-visible", "Advanced settings");
 
-    group.add(&launcher_version_row());
     group.add(&launch_mode_row);
     group.add(&run_in_background_row);
-    group.add(&theme_row);
     group.add(&advanced_row);
 
     let discord_rich_presence_row =
         switch_row(state, "discord-rich-presence", "Discord Rich Presence");
     discord_rich_presence_row
         .set_subtitle("Show the Roblox experience you’re playing on your Discord profile");
-    ask_for_discord_access_when_turned_on(&discord_rich_presence_row);
-
     let discord_group = adw::PreferencesGroup::builder().title("Discord").build();
     discord_group.add(&discord_rich_presence_row);
+    if let Some(row) = discord_access_row() {
+        state
+            .bind_property("discord-rich-presence", &row, "visible")
+            .sync_create()
+            .build();
+        discord_group.add(&row);
+    }
     let game_presence_row = switch_row(
         state,
         "allow-game-presence",
@@ -71,6 +72,7 @@ pub fn general_section(state: &AppState) -> gtk::Box {
 
     let section = gtk::Box::new(gtk::Orientation::Vertical, 12);
     section.append(&group);
+    section.append(&launcher_update_group(state));
     section.append(&discord_group);
     section.append(&runtime_section(state));
 

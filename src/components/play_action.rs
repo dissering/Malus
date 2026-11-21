@@ -67,7 +67,8 @@ impl PlayAction {
         match self {
             Self::Install(Client::Player) => "Install Roblox",
             Self::Install(Client::Studio) => "Install Roblox Studio",
-            Self::Play(_) => "Play",
+            Self::Play(Client::Player) => "Play",
+            Self::Play(Client::Studio) => "Open Studio",
             Self::Opening => "Opening…",
             Self::Stop => "Stop",
             Self::Stopping => "Stopping…",
@@ -76,9 +77,9 @@ impl PlayAction {
 
     pub fn icon_name(self) -> &'static str {
         match self {
-            Self::Install(_) => "malus-download-symbolic",
-            Self::Play(_) | Self::Opening => "malus-play-symbolic",
-            Self::Stop | Self::Stopping => "malus-square-symbolic",
+            Self::Install(_) => "folder-download-symbolic",
+            Self::Play(_) | Self::Opening => "media-playback-start-symbolic",
+            Self::Stop | Self::Stopping => "media-playback-stop-symbolic",
         }
     }
 

@@ -11,12 +11,12 @@ cargo build --release --locked --manifest-path ../Cargo.toml
 
 rm -rf "$staging" "$name.tar.gz"
 install -Dm755 ../target/release/malus "$root/bin/malus"
+printf 'Malus portable\n' > "$root/.malus-portable"
 install -Dm644 ../data/io.github.dissering.Tiltframe.desktop \
     "$root/share/applications/io.github.dissering.Tiltframe.desktop"
 mkdir -p "$root/share/icons"
 cp -r ../data/icons/hicolor "$root/share/icons/"
 install -Dm644 ../LICENSE "$root/LICENSE"
-install -Dm644 ../assets/lucide/LICENSE "$root/licenses/Lucide-LICENSE"
 install -Dm644 -t "$root/licenses" ../assets/fonts/*-OFL.txt
 
 tar --sort=name --owner=0 --group=0 --numeric-owner \

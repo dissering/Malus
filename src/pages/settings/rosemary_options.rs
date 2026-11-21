@@ -1,10 +1,6 @@
-use super::bound_rows::{choice_row, switch_row};
-use super::controller_access::controller_access_row;
+use super::bound_rows::choice_row;
 use super::mangohud::mangohud_row;
-use crate::state::{
-    AppState, CommandKey, PresentationMode, Renderer, SwapInterval, TitleBar,
-    USE_MONITOR_REFRESH_RATE, WindowSize,
-};
+use crate::state::{AppState, PresentationMode, Renderer, SwapInterval, USE_MONITOR_REFRESH_RATE};
 use adw::prelude::*;
 
 pub fn graphics_group(state: &AppState) -> adw::PreferencesGroup {
@@ -63,56 +59,6 @@ fn renderer_subtitle(vr: bool) -> &'static str {
     } else {
         "The graphics API used for Rosemary. Use OpenGL if you have older hardware."
     }
-}
-
-pub fn input_group(state: &AppState) -> adw::PreferencesGroup {
-    let size = choice_row::<WindowSize>(state, "window-size", "Roblox window size");
-    size.set_subtitle("Initial size for new Player windows. Applies on the next launch.");
-
-    let title_bar_row = choice_row::<TitleBar>(state, "title-bar", "Title bar");
-    title_bar_row.set_subtitle("Mac-style shows Roblox's menus inside the title bar.");
-
-    let menu_bar_row = switch_row(state, "show-menu-bar", "Show Roblox's menus");
-    menu_bar_row.set_subtitle(
-        "The Roblox, Edit and Window menus. Their shortcuts keep working when hidden.",
-    );
-
-    let command_key_row = choice_row::<CommandKey>(state, "command-key", "Command key");
-    command_key_row.set_subtitle("The key Roblox sees as ⌘ Command.");
-
-    let ctrl_for_edit_shortcuts_row = switch_row(
-        state,
-        "ctrl-for-edit-shortcuts",
-        "Ctrl for editing shortcuts",
-    );
-    ctrl_for_edit_shortcuts_row
-        .set_subtitle("Ctrl+A, C, V, X, Y and Z act as their ⌘ Command versions.");
-
-    let plain_ctrl_click_row = switch_row(state, "plain-ctrl-click", "Plain Ctrl+click");
-    plain_ctrl_click_row
-        .set_subtitle("Treat Ctrl+left click as a left click instead of a right click.");
-
-    state
-        .bind_property("command-key", &ctrl_for_edit_shortcuts_row, "sensitive")
-        .transform_to(|_, command_key: CommandKey| Some(command_key != CommandKey::Ctrl))
-        .sync_create()
-        .build();
-
-    let group = adw::PreferencesGroup::builder()
-        .title("Input &amp; windows")
-        .description("Rosemary options for the keyboard, mouse and window.")
-        .build();
-    group.add(&size);
-    group.add(&title_bar_row);
-    group.add(&menu_bar_row);
-    group.add(&command_key_row);
-    group.add(&ctrl_for_edit_shortcuts_row);
-    group.add(&plain_ctrl_click_row);
-    if let Some(controller_access_row) = controller_access_row() {
-        group.add(&controller_access_row);
-    }
-
-    group
 }
 
 pub fn refresh_rate_row(state: &AppState) -> adw::ActionRow {

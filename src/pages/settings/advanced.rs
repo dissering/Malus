@@ -10,7 +10,7 @@ pub fn advanced_section(state: &AppState) -> gtk::Box {
     let warning = gtk::Label::builder()
         .label(
             "⚠️ Advanced settings\n\
-             These options can break Quadra or Roblox if misconfigured. \
+             These options can break Malus or Roblox if misconfigured. \
              Only change them if you know what you're doing.",
         )
         .wrap(true)

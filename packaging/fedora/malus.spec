@@ -6,7 +6,7 @@ Name:           malus
 Version:        0.1.0
 Release:        1%{?dist}
 Summary:        Roblox Player and Studio launcher for Linux through Rosemary
-License:        GPL-3.0-only AND ISC AND OFL-1.1
+License:        GPL-3.0-only AND OFL-1.1
 URL:            https://github.com/dissering/Malus
 Source0:        %{url}/archive/%{revision}.tar.gz#/%{name}-%{version}.tar.gz
 ExclusiveArch:  x86_64
@@ -45,14 +45,13 @@ install -Dm644 data/%{app_id}.xml %{buildroot}%{_datadir}/mime/packages/%{app_id
 for icon in data/icons/hicolor/*/apps/%{app_id}.png; do
     install -Dm644 "$icon" %{buildroot}%{_datadir}/"${icon#data/}"
 done
-install -Dm644 assets/lucide/LICENSE Lucide-LICENSE
 
 %check
 desktop-file-validate %{buildroot}%{_datadir}/applications/%{app_id}.desktop
 %{buildroot}%{_bindir}/malus --version
 
 %files
-%license LICENSE Lucide-LICENSE assets/fonts/*-OFL.txt
+%license LICENSE assets/fonts/*-OFL.txt
 %{_bindir}/malus
 %{_datadir}/applications/%{app_id}.desktop
 %{_datadir}/icons/hicolor/*/apps/%{app_id}.png

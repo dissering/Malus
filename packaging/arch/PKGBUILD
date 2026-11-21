@@ -4,7 +4,7 @@ pkgrel=1
 pkgdesc='Roblox Player and Studio launcher for Linux through Rosemary'
 arch=(x86_64)
 url='https://github.com/dissering/Malus'
-license=(GPL-3.0-only ISC OFL-1.1)
+license=(GPL-3.0-only OFL-1.1)
 depends=(
   'gtk4>=1:4.18'
   'libadwaita>=1:1.7'
@@ -48,6 +48,5 @@ package() {
     install -Dm644 "$icon" "$pkgdir/usr/share/${icon#data/}"
   done
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/malus/LICENSE"
-  install -Dm644 assets/lucide/LICENSE "$pkgdir/usr/share/licenses/malus/Lucide-LICENSE"
   install -Dm644 -t "$pkgdir/usr/share/licenses/malus" assets/fonts/*-OFL.txt
 }

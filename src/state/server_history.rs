@@ -34,6 +34,12 @@ impl PlayedGame {
 pub struct ServerHistory(pub Vec<PlayedGame>);
 
 impl ServerHistory {
+    pub fn remove_experience(&mut self, place_id: u64) -> bool {
+        let count = self.0.len();
+        self.0.retain(|game| game.place_id != place_id);
+        self.0.len() != count
+    }
+
     pub fn with_join(&self, place_id: u64, mut server: JoinedServer) -> Self {
         let mut games = self.0.clone();
         let mut game = match games.iter().position(|game| game.place_id == place_id) {
@@ -92,5 +98,33 @@ impl ServerHistory {
             .filter(|game| game.place_id == place_id)
             .flat_map(|game| game.servers.iter().map(|server| server.job_id.clone()))
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn removing_an_experience_prevents_pending_metadata_updates_from_restoring_it() {
+        let removed_server = JoinedServer {
+            job_id: "removed".to_owned(),
+            address: None,
+            location: None,
+            joined_at: 1,
+        };
+        let retained_server = JoinedServer {
+            job_id: "retained".to_owned(),
+            joined_at: 2,
+            ..removed_server.clone()
+        };
+        let retained = ServerHistory::default().with_join(20, retained_server);
+        let mut history = retained.with_join(10, removed_server);
+
+        assert!(history.remove_experience(10));
+        assert!(!history.remove_experience(10));
+        assert_eq!(history, retained);
+        assert_eq!(history.with_game_name(10, "Removed"), retained);
+        assert_eq!(history.with_location("removed", "Location"), retained);
     }
 }

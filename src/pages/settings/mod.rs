@@ -45,38 +45,38 @@ pub fn settings_page(state: &AppState) -> gtk::Widget {
         &scrollable(&general_section(state)),
         Some("general"),
         "General",
-        "malus-settings-symbolic",
+        "preferences-system-symbolic",
     );
     stack.add_titled_with_icon(
         &scrollable(&profiles::profiles_section(state)),
         Some("profiles"),
         "Profiles",
-        "malus-sliders-horizontal-symbolic",
+        "document-properties-symbolic",
     );
     let fast_flags = stack.add_titled_with_icon(
         &scrollable(&fast_flags::fast_flags_section(state)),
         Some("fast-flags"),
         "FastFlags",
-        "malus-sliders-horizontal-symbolic",
+        "applications-engineering-symbolic",
     );
     let mods = stack.add_titled_with_icon(
         &scrollable(&mods_section(state)),
         Some("mods"),
         "Mods",
-        "malus-package-symbolic",
+        "folder-projects-symbolic",
     );
     let vr = stack.add_titled_with_icon(
         &scrollable(&vr_section(state)),
         Some("vr"),
         "VR",
-        "malus-glasses-symbolic",
+        "view-dual-symbolic",
     );
     if !is_running_in_flatpak() {
         stack.add_titled_with_icon(
             &scrollable(&integration_section(state)),
             Some("integration"),
             "Integration",
-            "malus-link-symbolic",
+            "insert-link-symbolic",
         );
     }
     let advanced_content = scrollable(&advanced_section(state));
@@ -84,7 +84,7 @@ pub fn settings_page(state: &AppState) -> gtk::Widget {
         &advanced_content,
         Some("advanced"),
         "Advanced",
-        "malus-terminal-symbolic",
+        "utilities-terminal-symbolic",
     );
 
     let advanced_page = stack.page(&advanced_content);

@@ -4,10 +4,12 @@ use super::game_details;
 use super::paths;
 use super::regions::PickedServer;
 use crate::state::{AppState, JoinedServer, ServerHistory};
+use anyhow::Context;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
 use std::io::ErrorKind;
+use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 thread_local! {
@@ -49,6 +51,20 @@ pub fn forget_all(state: &AppState) {
     save(state, ServerHistory::default());
 }
 
+pub fn forget_experience(state: &AppState, place_id: u64) {
+    let mut history = state.server_history();
+    if !history.remove_experience(place_id) {
+        return;
+    }
+    let path = paths::server_history_file();
+    match write(&path, &history) {
+        Ok(()) => state.set_server_history(history),
+        Err(error) => {
+            state.report_error(&format!("Couldn't remove the recent experience. {error:#}"))
+        }
+    }
+}
+
 fn remember_join(state: &AppState, place_id: u64, job_id: String, server_address: Option<String>) {
     let location =
         LOCATIONS_OF_PICKED_SERVERS.with_borrow_mut(|locations| locations.remove(&job_id));
@@ -84,17 +100,7 @@ fn fetch_game_name(state: &AppState, place_id: u64) {
 
 fn save(state: &AppState, history: ServerHistory) {
     let path = paths::server_history_file();
-    let written = path
-        .parent()
-        .map_or(Ok(()), fs::create_dir_all)
-        .map_err(anyhow::Error::from)
-        .and_then(|()| Ok(serde_json::to_string_pretty(&history)?))
-        .and_then(|contents| {
-            let unfinished_path = path.with_extension("json.partial");
-            fs::write(&unfinished_path, contents)?;
-            Ok(fs::rename(&unfinished_path, &path)?)
-        });
-    if let Err(error) = written {
+    if let Err(error) = write(&path, &history) {
         eprintln!(
             "Couldn't save the server history to {}: {error:#}",
             path.display()
@@ -102,6 +108,17 @@ fn save(state: &AppState, history: ServerHistory) {
     }
 
     state.set_server_history(history);
+}
+
+fn write(path: &Path, history: &ServerHistory) -> anyhow::Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).context("Couldn't create the server history directory")?;
+    }
+    let contents = serde_json::to_string_pretty(history)?;
+    let unfinished_path = path.with_extension("json.partial");
+    fs::write(&unfinished_path, contents).context("Couldn't write the server history")?;
+    fs::rename(unfinished_path, path).context("Couldn't replace the server history file")?;
+    Ok(())
 }
 
 fn read() -> ServerHistory {

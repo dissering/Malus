@@ -2,10 +2,8 @@ use crate::backend::{self, LaunchRequest, launch_profiles};
 use crate::command_line::Command;
 use crate::components::close_roblox_dialog::confirm_closing_roblox;
 use crate::components::error_dialog::show_errors_from;
-use crate::components::grid_backdrop::grid_backdrop;
 use crate::components::header::bar;
 use crate::components::launch_window::launch_window;
-use crate::components::line_field_backdrop::line_field_backdrop;
 use crate::components::logs_dialog::logs_dialog;
 use crate::components::play_action::PlayAction;
 use crate::components::tray::{TrayIcon, TrayRequest};
@@ -291,20 +289,20 @@ fn pages(state: &AppState) -> ViewStack {
         &home_page(state),
         Some(Page::Home.name()),
         "Home",
-        "malus-house-symbolic",
+        "go-home-symbolic",
     );
     let servers = pages.add_titled_with_icon(
         &servers_page(state),
         Some(Page::Servers.name()),
         "Library",
-        "malus-server-symbolic",
+        "view-grid-symbolic",
     );
     show_only_while_roblox_is_selected(&servers, state);
     pages.add_titled_with_icon(
         &settings_page(state),
         Some(Page::Settings.name()),
         "Settings",
-        "malus-settings-symbolic",
+        "preferences-system-symbolic",
     );
 
     pages
@@ -315,18 +313,13 @@ fn window(app: &Application, state: &AppState, pages: &ViewStack) -> Application
     toolbar_view.add_top_bar(&bar(pages));
     toolbar_view.set_content(Some(pages));
 
-    let backdrop = gtk::Overlay::builder().child(&grid_backdrop(state)).build();
-    backdrop.add_overlay(&line_field_backdrop(state));
-    backdrop.add_overlay(&toolbar_view);
-    backdrop.set_measure_overlay(&toolbar_view, true);
-
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Malus")
         .default_width(800)
         .default_height(600)
         .hide_on_close(true)
-        .content(&backdrop)
+        .content(&toolbar_view)
         .build();
 
     state.connect_error_message_notify(glib::clone!(

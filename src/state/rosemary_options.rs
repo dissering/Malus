@@ -88,16 +88,18 @@ impl Choice for SwapInterval {
 #[enum_type(name = "QuadraTitleBar")]
 #[serde(rename_all = "snake_case")]
 pub enum TitleBar {
-    #[default]
     MacStyle,
     System,
+    #[default]
+    Automatic,
 }
 
 impl Choice for TitleBar {
-    const ALL: &'static [Self] = &[Self::MacStyle, Self::System];
+    const ALL: &'static [Self] = &[Self::Automatic, Self::MacStyle, Self::System];
 
     fn label(self) -> &'static str {
         match self {
+            Self::Automatic => "Automatic",
             Self::MacStyle => "Mac-style",
             Self::System => "System",
         }

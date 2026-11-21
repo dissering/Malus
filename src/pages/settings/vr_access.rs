@@ -9,7 +9,7 @@ pub fn ask_for_vr_access_when_turned_on(row: &adw::SwitchRow) {
             show_command_dialog(
                 row,
                 "Let Malus reach your headset",
-                "Quadra runs as a Flatpak, so it can't reach this computer's OpenXR runtime yet. \
+                "Malus runs as a Flatpak, so it can't reach this computer's OpenXR runtime yet. \
                  Run this in a terminal to let it read where Monado or WiVRn is installed and \
                  talk to it, then restart Quadra:",
                 &command,

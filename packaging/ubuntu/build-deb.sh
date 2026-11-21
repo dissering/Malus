@@ -34,7 +34,6 @@ install -Dm644 "$repo_dir/data/$app_id.xml" "$package/usr/share/mime/packages/$a
 install -Dm644 "$repo_dir/flatpak/$app_id.metainfo.xml" "$package/usr/share/metainfo/$app_id.metainfo.xml"
 doc="$package/usr/share/doc/$package_name"
 install -Dm644 "$repo_dir/LICENSE" "$doc/copyright"
-install -Dm644 "$repo_dir/assets/lucide/LICENSE" "$doc/Lucide-LICENSE"
 for notice in "$repo_dir"/assets/fonts/*-OFL.txt; do
     install -Dm644 "$notice" "$doc/${notice##*/}"
 done

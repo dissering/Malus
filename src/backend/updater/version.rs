@@ -57,8 +57,7 @@ impl Version {
         })
     }
 
-    #[cfg(test)]
-    fn is_prerelease(&self) -> bool {
+    pub fn is_prerelease(&self) -> bool {
         !self.prerelease.is_empty()
     }
 }

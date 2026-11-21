@@ -1,7 +1,9 @@
 use super::logs_button::logs_button;
+use super::open_place::open_place_button;
 use super::play_button::play_button;
 use super::playtime_label::playtime_label;
 use super::status_label::status_label;
+use super::studio_plugins::plugins_button;
 use crate::components::icon::app_icon;
 use crate::state::{AppState, Client};
 use adw::prelude::*;
@@ -20,6 +22,9 @@ pub fn client_page(state: &AppState, client: Client) -> gtk::Widget {
     actions.set_halign(gtk::Align::Center);
     actions.set_margin_top(10);
     actions.append(&play_button(state, client));
+    if client == Client::Studio {
+        actions.append(&open_place_button(state));
+    }
     actions.append(&logs_button(state));
 
     let content = gtk::Box::builder()
@@ -39,6 +44,9 @@ pub fn client_page(state: &AppState, client: Client) -> gtk::Widget {
         content.append(&playtime_label(state));
     }
     content.append(&actions);
+    if client == Client::Studio {
+        content.append(&plugins_button(state));
+    }
 
     let page = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)

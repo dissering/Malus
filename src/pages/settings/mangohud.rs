@@ -28,7 +28,7 @@ fn show_flatpak_install_dialog(row: &adw::SwitchRow) {
     let dialog = adw::AlertDialog::builder()
         .heading("Install MangoHud for Flatpak")
         .body(format!(
-            "Quadra runs as a Flatpak, so it can't use the MangoHud installed on your system. \
+            "Malus runs as a Flatpak, so it can't use the MangoHud installed on your system. \
              Install the MangoHud Flatpak extension, then restart Quadra:\n\n{FLATPAK_INSTALL_COMMAND}"
         ))
         .build();

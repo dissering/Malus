@@ -36,6 +36,7 @@ mod roblox;
 mod runners;
 mod server_history;
 mod server_location;
+pub mod studio_plugins;
 mod telemetry;
 mod transport_patch;
 mod updater;
@@ -55,6 +56,7 @@ pub use launch_request::{LaunchRequest, StudioTarget};
 pub use library::{Favorites, GamePreview, PreviewRequest, load_game_previews};
 pub use mods::{disabled_units as disabled_mods, enable_unit as enable_mod, folder as mods_folder};
 pub use quadra_rosemary::VERSION as QUADRA_ROSEMARY_VERSION;
+pub use updater::{check_launcher_update, launcher_can_update_itself};
 pub use vr_access::missing as missing_vr_access;
 
 use crate::state::{AppState, Client, QUADRA_PREFIX, QUADRA_RUNNER, Regions};
@@ -79,6 +81,7 @@ pub fn initialize(state: &AppState) {
     roblox::archive_old_player_bundle();
     fast_flags::initialize(state);
     discord_presence::initialize(state);
+    updater::initialize(state);
     server_history::initialize(state);
     server_location::initialize(state);
     refresh(state);
@@ -103,6 +106,28 @@ pub fn import_mod_pack(state: &AppState, source: PathBuf, finished: impl FnOnce(
         move |progress| {
             progress.step("Importing mod pack");
             mods::packs::import(&source)
+        },
+        move |_, ()| finished(),
+    );
+}
+
+pub fn import_studio_plugin(state: &AppState, source: PathBuf, finished: impl FnOnce() + 'static) {
+    if state.busy() || state.running() {
+        state.report_error("Close Roblox and wait for the current task before importing a plugin.");
+        return;
+    }
+    let directory = match studio_plugins::directory(state) {
+        Ok(directory) => directory,
+        Err(error) => {
+            state.report_error(&format!("{error:#}"));
+            return;
+        }
+    };
+    run_task(
+        state,
+        move |progress| {
+            progress.step("Importing Studio plugin");
+            studio_plugins::import(&directory, &source)
         },
         move |_, ()| finished(),
     );
@@ -378,6 +403,10 @@ pub fn collect_diagnostics(directory: &Path) -> anyhow::Result<std::path::PathBu
 
 pub fn forget_server_history(state: &AppState) {
     server_history::forget_all(state);
+}
+
+pub fn forget_recent_experience(state: &AppState, place_id: u64) {
+    server_history::forget_experience(state, place_id);
 }
 
 fn start_playing(state: &AppState, destination: Destination) {

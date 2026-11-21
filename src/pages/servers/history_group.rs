@@ -1,3 +1,4 @@
+use super::experience_menu::experience_menu;
 use super::join_availability::JoinAvailability;
 use super::place_link::place_id_in;
 use super::previews::{Previews, REFRESH_INTERVAL};
@@ -12,20 +13,28 @@ use std::rc::Rc;
 
 const UNKNOWN_LOCATION: &str = "Unknown location";
 
+type PlaceRows = RefCell<Vec<(u64, glib::WeakRef<adw::PreferencesRow>)>>;
+
 struct Library {
     favorites: RefCell<Favorites>,
     previews: Rc<Previews>,
+    search: glib::WeakRef<gtk::SearchEntry>,
+    toasts: glib::WeakRef<adw::ToastOverlay>,
     favorite_group: glib::WeakRef<adw::PreferencesGroup>,
     history_group: glib::WeakRef<adw::PreferencesGroup>,
     forget_group: glib::WeakRef<adw::PreferencesGroup>,
-    favorite_rows: RefCell<Vec<glib::WeakRef<gtk::Widget>>>,
-    history_rows: RefCell<Vec<(u64, glib::WeakRef<gtk::Widget>)>>,
+    favorite_empty: glib::WeakRef<adw::ActionRow>,
+    history_empty: glib::WeakRef<adw::ActionRow>,
+    favorite_rows: PlaceRows,
+    history_rows: PlaceRows,
     join_availability: JoinAvailability,
 }
 
 pub fn library_groups(
     state: &AppState,
     join_availability: &JoinAvailability,
+    search: &gtk::SearchEntry,
+    toasts: &adw::ToastOverlay,
 ) -> [adw::PreferencesGroup; 3] {
     let favorites_group = adw::PreferencesGroup::builder().title("Favorites").build();
     let add_row = adw::EntryRow::builder()
@@ -33,21 +42,26 @@ pub fn library_groups(
         .show_apply_button(true)
         .build();
     favorites_group.add(&add_row);
+    let favorite_empty = adw::ActionRow::new();
+    favorites_group.add(&favorite_empty);
 
     let history_group = adw::PreferencesGroup::builder()
         .title("Recent experiences")
         .build();
-    let forget_row = adw::ButtonRow::builder()
-        .title("Clear history")
+    let history_empty = adw::ActionRow::new();
+    history_group.add(&history_empty);
+    let forget_button = gtk::Button::builder()
+        .label("Clear History…")
+        .halign(gtk::Align::End)
         .css_classes(["destructive-action"])
         .build();
-    forget_row.connect_activated(glib::clone!(
+    forget_button.connect_clicked(glib::clone!(
         #[weak]
         state,
-        move |_| backend::forget_server_history(&state)
+        move |row| confirm_clear_history(row, &state)
     ));
     let forget_group = adw::PreferencesGroup::new();
-    forget_group.add(&forget_row);
+    forget_group.add(&forget_button);
 
     let model = Rc::new(Library {
         favorites: RefCell::new(Favorites::load().unwrap_or_else(|error| {
@@ -55,9 +69,13 @@ pub fn library_groups(
             Favorites::default()
         })),
         previews: Rc::default(),
+        search: search.downgrade(),
+        toasts: toasts.downgrade(),
         favorite_group: favorites_group.downgrade(),
         history_group: history_group.downgrade(),
         forget_group: forget_group.downgrade(),
+        favorite_empty: favorite_empty.downgrade(),
+        history_empty: history_empty.downgrade(),
         favorite_rows: RefCell::default(),
         history_rows: RefCell::default(),
         join_availability: join_availability.clone(),
@@ -80,6 +98,11 @@ pub fn library_groups(
         }
     ));
     add_row.connect_changed(|row| row.remove_css_class("error"));
+    search.connect_changed(glib::clone!(
+        #[weak]
+        model,
+        move |_| model.filter_rows()
+    ));
 
     state.connect_server_history_notify(glib::clone!(
         #[weak]
@@ -160,7 +183,7 @@ impl Library {
             .favorite_rows
             .borrow_mut()
             .drain(..)
-            .filter_map(|row| row.upgrade())
+            .filter_map(|(_, row)| row.upgrade())
         {
             favorite_group.remove(&row);
         }
@@ -168,9 +191,7 @@ impl Library {
         for &place_id in favorites.place_ids() {
             let row = self.favorite_row(state, place_id, &history);
             favorite_group.add(&row);
-            self.favorite_rows
-                .borrow_mut()
-                .push(row.upcast::<gtk::Widget>().downgrade());
+            self.track_row(&self.favorite_rows, place_id, row.upcast_ref());
         }
 
         let mut expanded = HashSet::new();
@@ -185,27 +206,79 @@ impl Library {
                 history_group.remove(&row);
             }
         }
-        if history.0.is_empty() {
-            let empty = adw::ActionRow::builder()
-                .title("No recent experiences")
-                .subtitle("Play an experience to see its servers here.")
-                .build();
-            history_group.add(&empty);
-            self.history_rows
-                .borrow_mut()
-                .push((0, empty.upcast::<gtk::Widget>().downgrade()));
-        } else {
-            for game in &history.0 {
-                let row = self.history_row(state, game, favorites.contains(game.place_id));
-                row.set_expanded(expanded.contains(&game.place_id));
-                history_group.add(&row);
-                self.history_rows
-                    .borrow_mut()
-                    .push((game.place_id, row.upcast::<gtk::Widget>().downgrade()));
-            }
+        for game in &history.0 {
+            let row = self.history_row(state, game, favorites.contains(game.place_id));
+            row.set_expanded(expanded.contains(&game.place_id));
+            history_group.add(&row);
+            self.track_row(&self.history_rows, game.place_id, row.upcast_ref());
         }
         forget_group.set_visible(!history.0.is_empty());
+        self.filter_rows();
         self.refresh(state);
+    }
+
+    fn track_row(self: &Rc<Self>, rows: &PlaceRows, place_id: u64, row: &adw::PreferencesRow) {
+        rows.borrow_mut().push((place_id, row.downgrade()));
+        row.connect_title_notify(glib::clone!(
+            #[weak(rename_to = model)]
+            self,
+            move |_| {
+                if model
+                    .search
+                    .upgrade()
+                    .is_some_and(|search| !search.text().trim().is_empty())
+                {
+                    model.filter_rows();
+                }
+            }
+        ));
+    }
+
+    fn filter_rows(&self) {
+        let Some(search) = self.search.upgrade() else {
+            return;
+        };
+        let text = search.text();
+        let query = glib::casefold(text.trim());
+        let id = place_id_in(&query);
+        for (rows, empty, empty_title, empty_subtitle, no_matches) in [
+            (
+                &self.favorite_rows,
+                &self.favorite_empty,
+                "No favorites yet",
+                "Pin an experience here or from your recent list.",
+                "No matching favorites",
+            ),
+            (
+                &self.history_rows,
+                &self.history_empty,
+                "No recent experiences",
+                "Play an experience to see its servers here.",
+                "No matching recent experiences",
+            ),
+        ] {
+            let rows = rows.borrow();
+            let mut has_match = false;
+            for (place_id, row) in rows.iter() {
+                if let Some(row) = row.upgrade() {
+                    let matches = id == Some(*place_id)
+                        || place_id.to_string().contains(query.as_str())
+                        || glib::casefold(row.title()).contains(query.as_str());
+                    row.set_visible(matches);
+                    has_match |= matches;
+                }
+            }
+            if let Some(empty) = empty.upgrade() {
+                if rows.is_empty() {
+                    empty.set_title(empty_title);
+                    empty.set_subtitle(empty_subtitle);
+                } else {
+                    empty.set_title(no_matches);
+                    empty.set_subtitle("");
+                }
+                empty.set_visible(!has_match);
+            }
+        }
     }
 
     fn favorite_row(
@@ -225,6 +298,7 @@ impl Library {
             row.add_suffix(&self.rejoin_button(state, place_id, server));
         }
         row.add_suffix(&self.play_button(state, place_id));
+        row.add_suffix(&experience_menu(state, &self.toasts, place_id, false));
         row
     }
 
@@ -247,6 +321,7 @@ impl Library {
             row.add_suffix(&self.rejoin_button(state, place_id, server));
         }
         row.add_suffix(&self.play_button(state, place_id));
+        row.add_suffix(&experience_menu(state, &self.toasts, place_id, true));
         for server in &game.servers {
             let server_row = adw::ActionRow::builder()
                 .title(
@@ -318,6 +393,26 @@ impl Library {
         self.join_availability.applies_to(&button);
         button
     }
+}
+
+fn confirm_clear_history(parent: &gtk::Button, state: &AppState) {
+    let dialog = adw::AlertDialog::builder()
+        .heading("Clear recent experiences?")
+        .body("This removes your recent experiences and their saved servers. Your favorites are kept.")
+        .build();
+    dialog.add_responses(&[("cancel", "Cancel"), ("clear", "Clear History")]);
+    dialog.set_close_response("cancel");
+    dialog.set_default_response(Some("cancel"));
+    dialog.set_response_appearance("clear", adw::ResponseAppearance::Destructive);
+    dialog.connect_response(
+        Some("clear"),
+        glib::clone!(
+            #[weak]
+            state,
+            move |_, _| backend::forget_server_history(&state)
+        ),
+    );
+    dialog.present(Some(parent));
 }
 
 fn game_title(place_id: u64, game: Option<&PlayedGame>) -> String {

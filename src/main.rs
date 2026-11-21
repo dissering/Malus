@@ -9,7 +9,7 @@ mod utils;
 use adw::{Application, prelude::*};
 use gtk::{gio, glib};
 use quadra::Quadra;
-use state::{AppState, Theme};
+use state::AppState;
 use std::cell::OnceCell;
 use std::rc::Rc;
 
@@ -41,7 +41,7 @@ fn main() -> glib::ExitCode {
         move |app| {
             let state = AppState::load();
             backend::initialize(&state);
-            follow_theme(&state);
+            configure_appearance();
             app.connect_shutdown(glib::clone!(
                 #[strong]
                 state,
@@ -82,47 +82,19 @@ fn main() -> glib::ExitCode {
     app.run_with_args(&args)
 }
 
-fn follow_theme(state: &AppState) {
-    utils::register_bundled_fonts();
-
+fn configure_appearance() {
     let display = gtk::gdk::Display::default().unwrap();
-    gio::resources_register_include!("malus-icons.gresource").expect("load Malus icons");
     let icons = gtk::IconTheme::for_display(&display);
-    icons.add_resource_path("/io/github/dissering/Malus/icons");
     icons.add_search_path(glib::user_data_dir().join("icons"));
     gtk::Window::set_default_icon_name(APP_ID);
-    let theme = gtk::CssProvider::new();
-    gtk::style_context_add_provider_for_display(
-        &display,
-        &theme,
-        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-    );
-
-    let header = gtk::CssProvider::new();
-    header.load_from_string(
-        ".app-header { padding-left: 0px; }
-         .app-header .app-icon { margin-left: 12px; }
-         .home-card { padding: 26px 28px 24px; border-radius: 22px; }
+    let branding = gtk::CssProvider::new();
+    branding.load_from_string(
+        ".home-card { padding: 26px 28px 24px; border-radius: 22px; }
          .home-card .title-1 { margin-top: 2px; }",
     );
     gtk::style_context_add_provider_for_display(
         &display,
-        &header,
+        &branding,
         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
-
-    state.follow_properties(&["theme"], move |state| apply_theme(&theme, state.theme()));
-}
-
-fn apply_theme(provider: &gtk::CssProvider, theme: Theme) {
-    let (color_scheme, stylesheet) = match theme {
-        Theme::Grid => (adw::ColorScheme::ForceDark, include_str!("styles/grid.css")),
-        Theme::Monochrome => (
-            adw::ColorScheme::ForceDark,
-            include_str!("styles/monochrome.css"),
-        ),
-        Theme::Adwaita => (adw::ColorScheme::Default, ""),
-    };
-    adw::StyleManager::default().set_color_scheme(color_scheme);
-    provider.load_from_string(stylesheet);
 }

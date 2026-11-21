@@ -1,3 +1,4 @@
+mod experience_menu;
 mod history_group;
 mod join_availability;
 mod join_by_link_row;
@@ -36,7 +37,13 @@ pub fn servers_page(state: &AppState) -> gtk::Widget {
         .margin_bottom(12)
         .build();
     content.append(&joining_group);
-    for group in library_groups(state, &join_availability) {
+    let search = gtk::SearchEntry::builder()
+        .placeholder_text("Search by name or place ID")
+        .build();
+    search.update_property(&[gtk::accessible::Property::Label("Search library")]);
+    content.append(&search);
+    let toasts = adw::ToastOverlay::new();
+    for group in library_groups(state, &join_availability, &search, &toasts) {
         content.append(&group);
     }
 
@@ -44,7 +51,8 @@ pub fn servers_page(state: &AppState) -> gtk::Widget {
     unfocus_on_outside_click(&page);
     load_regions_when_first_shown(&page, state);
 
-    page.upcast()
+    toasts.set_child(Some(&page));
+    toasts.upcast()
 }
 
 fn load_regions_when_first_shown(page: &gtk::ScrolledWindow, state: &AppState) {

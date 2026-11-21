@@ -28,7 +28,7 @@ pub fn keep_player_on_production(prefix_directory: &Path) {
 
         match fs::write(&preferences, PRODUCTION_PREFERENCES) {
             Ok(()) => eprintln!(
-                "Roblox had saved the {} channel, which Quadra doesn't install, so it was set back \
+                "Roblox had saved the {} channel, which Malus doesn't install, so it was set back \
                  to production to stop Roblox's installer from running",
                 channel.as_deref().unwrap_or("unreadable")
             ),

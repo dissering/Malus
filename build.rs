@@ -22,7 +22,6 @@ fn main() {
     println!("cargo:rerun-if-env-changed={COMPILER_ENV}");
 
     let out_directory = PathBuf::from(env::var("OUT_DIR").expect("cargo sets OUT_DIR"));
-    compile_icons(&out_directory);
     let library = out_directory.join(VR_LIBRARY);
 
     if let Err(reason) = build_vr_library(&out_directory, &library) {
@@ -33,17 +32,6 @@ fn main() {
         );
         fs::write(&library, []).expect("OUT_DIR is writable");
     }
-}
-
-fn compile_icons(out_directory: &Path) {
-    println!("cargo:rerun-if-changed=assets/icons.gresource.xml");
-    println!("cargo:rerun-if-changed=assets/lucide");
-    run(Command::new("glib-compile-resources")
-        .arg("--sourcedir=assets")
-        .arg("--target")
-        .arg(out_directory.join("malus-icons.gresource"))
-        .arg("assets/icons.gresource.xml"))
-    .expect("compile Malus's Lucide icon resources");
 }
 
 fn build_vr_library(out_directory: &Path, library: &Path) -> Result<(), String> {

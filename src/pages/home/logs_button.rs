@@ -6,7 +6,7 @@ use gtk::glib;
 pub fn logs_button(state: &AppState) -> gtk::Button {
     let content = adw::ButtonContent::builder()
         .label("Logs")
-        .icon_name("malus-terminal-symbolic")
+        .icon_name("utilities-terminal-symbolic")
         .build();
 
     let button = gtk::Button::builder()
