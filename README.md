@@ -1,5 +1,7 @@
 # Malus
 
+<img src="data/icons/hicolor/128x128/apps/io.github.dissering.Tiltframe.png" width="88" height="88" alt="Malus logo">
+
 Roblox Player and Studio on Linux through Rosemary. Forked from [Quadra](https://github.com/QuadraHQ/Quadra).
 
 ## Install
